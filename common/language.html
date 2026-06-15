@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختر اللغة</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f9ff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container { max-width: 500px; width: 100%; text-align: center; }
+        h1 { color: #1e3a8a; margin-bottom: 30px; }
+        .lang-card {
+            background: white;
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .lang-card:hover { transform: translateY(-3px); border-color: #3b82f6; }
+        .flag { font-size: 48px; }
+        .lang-name { font-size: 22px; font-weight: 600; color: #1e293b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 اختر اللغة</h1>
+        <div class="lang-card" data-lang="ar">
+            <div class="flag">🇸🇦</div>
+            <div class="lang-name">العربية</div>
+        </div>
+        <div class="lang-card" data-lang="en">
+            <div class="flag">🇬🇧</div>
+            <div class="lang-name">English</div>
+        </div>
+        <div class="lang-card" data-lang="ur">
+            <div class="flag">🇵🇰</div>
+            <div class="lang-name">اردو</div>
+        </div>
+    </div>
+    <script>
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        function getDestination() {
+            // محاولة الحصول على returnUrl من الرابط
+            let returnUrl = getQueryParam('return');
+            
+            if (returnUrl && returnUrl !== 'undefined' && returnUrl !== 'null') {
+                return decodeURIComponent(returnUrl);
+            }
+            
+            // إذا لم يوجد returnUrl، نحدد الصفحة حسب المسار الحالي
+            const currentPath = window.location.pathname;
+            
+            // الحالة 1: إذا كنا في مجلد Customer-App
+            if (currentPath.includes('/Customer-App/')) {
+                return '/Customer-App/login.html';
+            }
+            // الحالة 2: إذا كنا في مجلد Technician-App
+            else if (currentPath.includes('/Technician-App/')) {
+                return '/Technician-App/login.html';
+            }
+            // الحالة 3: إذا كنا في مجلد Merchant-App
+            else if (currentPath.includes('/Merchant-App/')) {
+                return '/Merchant-App/login.html';
+            }
+            // الحالة 4: افتراضي
+            else {
+                return '/Customer-App/login.html';
+            }
+        }
+
+        document.querySelectorAll('.lang-card').forEach(card => {
+            card.addEventListener('click', () => {
+                // حفظ اللغة المختارة
+                localStorage.setItem('appLang', card.getAttribute('data-lang'));
+                
+                // الانتقال إلى الصفحة المناسبة
+                const destination = getDestination();
+                console.log("الانتقال إلى:", destination);
+                window.location.href = destination;
+            });
+        });
+    </script>
+</body>
+</html>

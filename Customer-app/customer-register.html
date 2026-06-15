@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>تسجيل المستهلك - TechCare</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../common/storage.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f4fa;
+            padding: 20px;
+            direction: rtl;
+        }
+        .demo-toggle {
+            background: #f1f5f9;
+            padding: 8px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        h1 { text-align: center; color: #1e3a8a; margin-bottom: 8px; }
+        .sub { text-align: center; color: #475569; margin-bottom: 24px; font-size: 14px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; color: #0f172a; }
+        input, select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 16px;
+            font-family: inherit;
+            background: white;
+        }
+        input:focus, select:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        .map-container { border-radius: 20px; overflow: hidden; border: 2px solid #e2e8f0; margin-bottom: 10px; }
+        #map { height: 220px; width: 100%; }
+        .current-loc-btn {
+            background: #eef2ff; border: none; padding: 10px 16px; border-radius: 40px;
+            font-size: 14px; font-weight: 500; color: #1e40af; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px; margin-top: 6px;
+        }
+        .button-group { display: flex; gap: 16px; margin-top: 28px; }
+        .btn {
+            flex: 1; padding: 14px; border-radius: 40px; font-weight: bold; font-size: 16px;
+            cursor: pointer; border: none; text-align: center;
+        }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-outline { background: white; border: 2px solid #3b82f6; color: #3b82f6; }
+        .error-msg { color: #ef4444; font-size: 12px; margin-top: 4px; display: none; }
+        .toast {
+            position: fixed; bottom: 30px; left: 20px; right: 20px; background: #22c55e;
+            color: white; padding: 12px; border-radius: 60px; text-align: center;
+            z-index: 1100; display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div style="max-width: 700px; margin: 0 auto;">
+    <div class="demo-toggle">
+        <input type="checkbox" id="demoModeCheckbox"> <label for="demoModeCheckbox">🧪 وضع تجريبي (تجاوز الحقول)</label>
+    </div>
+    <div class="container">
+        <h1 id="pageTitle">📝 تسجيل المستهلك</h1>
+        <div class="sub" id="pageSub">يرجى إكمال البيانات التالية بدقة</div>
+
+        <div class="form-group">
+            <label id="labelFullName">الاسم الكامل <span style="color:red;">*</span></label>
+            <input type="text" id="fullName" placeholder="مثال: أحمد محمد العلي">
+            <div class="error-msg" id="errorName"></div>
+        </div>
+
+        <div class="form-group">
+            <label id="labelMobile">رقم الجوال <span style="color:red;">*</span></label>
+            <input type="tel" id="mobile" placeholder="05xxxxxxxx" maxlength="10" inputmode="numeric">
+            <div class="error-msg" id="errorMobile"></div>
+        </div>
+
+        <div class="form-group">
+            <label id="labelEmail">البريد الإلكتروني <span style="color:red;">*</span></label>
+            <input type="email" id="email" placeholder="example@domain.com">
+            <div class="error-msg" id="errorEmail"></div>
+        </div>
+
+        <div class="form-group">
+            <label id="labelPassword">كلمة المرور <span style="color:red;">*</span></label>
+            <input type="password" id="password" placeholder="********">
+            <div class="error-msg" id="errorPassword"></div>
+        </div>
+
+        <div class="form-group">
+            <label id="labelCity">المدينة <span style="color:red;">*</span></label>
+            <select id="city">
+                <option value="">-- اختر المدينة --</option>
+                <option value="الرياض">الرياض</option>
+                <option value="جدة">جدة</option>
+                <option value="مكة">مكة</option>
+                <option value="الدمام">الدمام</option>
+            </select>
+            <div class="error-msg" id="errorCity"></div>
+        </div>
+
+        <div class="form-group">
+            <label id="labelNeighborhood">الحي <span style="color:red;">*</span></label>
+            <select id="neighborhood">
+                <option value="">-- اختر الحي --</option>
+            </select>
+            <div class="error-msg" id="errorNeighborhood"></div>
+        </div>
+
+        <div class="form-group">
+            <label id="labelMap">الموقع على الخريطة <span style="color:red;">*</span></label>
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+            <button type="button" class="current-loc-btn" id="getLocationBtn">
+                📍 <span id="btnLocText">تحديد موقعي الحالي</span>
+            </button>
+            <div class="error-msg" id="errorMap"></div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-outline" id="saveBtn">💾 <span id="btnSaveText">حفظ</span></button>
+            <button class="btn btn-primary" id="continueBtn">🚀 <span id="btnContinueText">متابعة</span></button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="../common/shared.js"></script>
+<script>
+    // ===================== بيانات الأحياء المدمجة =====================
+    const citiesData = {
+        "الرياض": ["الربيع", "الندى", "الصحافة", "النرجس", "العارض", "النفل", "العقيق", "الوادي", "الغدير", "الياسمين", "الفلاح", "بنبان", "القيروان", "حطين", "الملقا", "المروج", "المصيف", "التعاون", "الازدهار", "المغرزات", "الورود", "الرحمانية", "المحمدية", "النخيل", "المرسلات", "الواحة", "الملك فهد", "الملك عبدالله", "صلاح الدين", "العليا", "السليمانية", "المعذر الشمالي", "النزهة", "الروضة", "الرمال", "المونسية", "قرطبة", "الجنادرية", "القادسية", "اليرموك", "غرناطة", "أشبيلية", "الحمراء", "المعيزلية", "الخليج", "النهضة", "الروابي", "الريان", "القدس", "الجزيرة", "النظيم", "النسيم الشرقي", "النسيم الغربي", "الفيحاء", "السعادة", "الرماية", "الندوة", "الشهداء", "الملك فيصل", "المنار", "السلام", "الزهور", "السويدي", "السويدي الغربي", "ظهرة البديعة", "البديعة", "العريجاء", "العريجاء الغربية", "العريجاء الوسطى", "شبرا", "سلطانة", "الزهرة", "لبن", "طويق", "نمار", "السفارات", "الخزامى", "ظهرة لبن", "المهدية", "ديراب", "الدرعية الجديدة", "العزيزية", "الدار البيضاء", "الحزم", "بدر", "الشفا", "المروة", "المصانع", "المنصورية", "الفيصلية", "غبيراء", "منفوحة", "منفوحة الجديدة", "الحاير", "عتيقة", "الخالدية", "الدريهمية", "اليمامة", "الشعلان", "الفواز", "المشاعل", "إسكان الخرج", "السلي", "المناخ", "طيبة", "أحد", "النور", "الملز", "الفاخرية", "أم الحمام الشرقي", "أم الحمام الغربي", "المعذر", "المؤتمرات", "الضباط", "الوزارات", "الربوة", "جرير", "الصالحية", "الديرة", "الشميسي", "الوشام", "الفوطة", "عليشة", "الجرادية", "الناصرية", "دخنة", "البطحاء", "المرقب", "العودة", "سلام", "ثليم", "الصفا", "العمل"],
+        "جدة": ["البغدادية الشرقية", "البغدادية الغربية", "البلد", "العمارية", "الهنداوية", "الصحيفة", "الكندرة", "النزلة اليمانية", "النزلة الشرقية", "السبيل", "الثعالبة", "الشرفية", "الرويس", "الحمراء", "الأندلس", "الفيصلية", "الرحاب", "مشرفة", "العزيزية", "الربوة", "الصفا", "المروة", "النعيم", "الزهراء", "الروضة", "السلامة", "البوادي", "الخالدية", "الشاطئ", "النهضة", "النورس", "المحمدية", "البساتين", "أبحر الجنوبية", "أبحر الشمالية", "المرجان", "الياقوت", "الشراع", "الأمواج", "الفردوس", "الزمرد", "اللؤلؤ", "الرياض", "الأصالة", "طيبة", "النزهة", "السامر", "الأجواد", "المنار", "التوفيق", "السنابل", "الجامعة", "قويزة", "بريمان", "الحمدانية", "الفلاح", "الواحة", "الريان", "المنارات", "التيسير", "مدائن الفهد"],
+        "مكة": ["العزيزية", "الشرائع", "العوالي", "الزاهر", "النزهة", "الشوقية", "الكعكية", "ولي العهد", "بطحاء قريش", "العمرة", "التنعيم", "الحجون", "جرول", "المسفلة", "المعابدة", "الرصيفة", "الهجرة", "الخالدية", "الشامية", "أجياد", "الغزة", "البيبان", "الروابي", "النوارية", "البحيرات", "الحسينية", "أم الجود", "النسيم", "العتيبية", "ريع ذاخر", "جبل النور", "جبل ثور", "الزاهراء", "الحمراء", "السلامة", "العدل", "الروضة", "الجامعة", "الفيحاء", "العكيشية", "الراشدية", "النوارية الجديدة"],
+        "الدمام": ["الفيصلية", "الشاطئ", "الزهور", "الروضة", "أحد", "النور", "المزروعية", "العنود", "الضباب", "المحمدية", "البادية", "النسيم", "الجلوية", "الجوهرة", "الفيحاء", "البديع", "البديع الشمالي", "البديع الجنوبي", "الندى", "الفردوس", "الريان", "غرناطة", "الواحة", "طيبة", "المنار", "الإسكان", "الصناعية الأولى", "الصناعية الثانية", "الصناعية الثالثة"]
+    };
+
+    // ===================== الترجمة =====================
+    const currentLang = localStorage.getItem('appLang') || 'ar';
+    const translationsPage = {
+        ar: {
+            title: "📝 تسجيل المستهلك", sub: "يرجى إكمال البيانات التالية بدقة",
+            fullName: "الاسم الكامل", mobile: "رقم الجوال", email: "البريد الإلكتروني", password: "كلمة المرور",
+            city: "المدينة", neighborhood: "الحي", map: "الموقع على الخريطة",
+            currentLoc: "تحديد موقعي الحالي", save: "حفظ", continue: "متابعة",
+            saveSuccess: "تم حفظ البيانات بنجاح ✅"
+        },
+        en: {
+            title: "📝 Customer Registration", sub: "Please fill in the following data accurately",
+            fullName: "Full Name", mobile: "Mobile Number", email: "Email", password: "Password",
+            city: "City", neighborhood: "Neighborhood", map: "Location on Map",
+            currentLoc: "Use my current location", save: "Save", continue: "Continue",
+            saveSuccess: "Data saved successfully ✅"
+        },
+        ur: {
+            title: "📝 صارف کی رجسٹریشن", sub: "براہ کرم درج ذیل ڈیٹا درست طریقے سے پُر کریں",
+            fullName: "پورا نام", mobile: "فون نمبر", email: "ای میل", password: "پاس ورڈ",
+            city: "شہر", neighborhood: "محلہ", map: "نقشہ پر مقام",
+            currentLoc: "میری موجودہ لوکیشن استعمال کریں", save: "محفوظ کریں", continue: "جاری رکھیں",
+            saveSuccess: "ڈیٹا کامیابی سے محفوظ ہوگیا ✅"
+        }
+    };
+    const tPage = (key) => translationsPage[currentLang]?.[key] || translationsPage['ar'][key];
+    function applyPageTranslation() {
+        document.getElementById('pageTitle').innerText = tPage('title');
+        document.getElementById('pageSub').innerText = tPage('sub');
+        document.getElementById('labelFullName').innerHTML = tPage('fullName') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelMobile').innerHTML = tPage('mobile') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelEmail').innerHTML = tPage('email') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelPassword').innerHTML = tPage('password') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelCity').innerHTML = tPage('city') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelNeighborhood').innerHTML = tPage('neighborhood') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelMap').innerHTML = tPage('map') + ' <span style="color:red;">*</span>';
+        document.getElementById('btnLocText').innerText = tPage('currentLoc');
+        document.getElementById('btnSaveText').innerText = tPage('save');
+        document.getElementById('btnContinueText').innerText = tPage('continue');
+    }
+    applyPageTranslation();
+
+    // ====== الخريطة ======
+    let map, marker, currentLatLng = null;
+    function initMap() {
+        const defaultLoc = [24.7136, 46.6753];
+        map = L.map('map').setView(defaultLoc, 12);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+        }).addTo(map);
+        marker = L.marker(defaultLoc, { draggable: true }).addTo(map);
+        currentLatLng = { lat: defaultLoc[0], lng: defaultLoc[1] };
+        marker.on('dragend', function(e) {
+            const pos = marker.getLatLng();
+            currentLatLng = { lat: pos.lat, lng: pos.lng };
+            document.getElementById('errorMap').style.display = 'none';
+        });
+    }
+    function getCurrentLocation() {
+        if (!navigator.geolocation) { showToastMsg("المتصفح لا يدعم تحديد الموقع", true); return; }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                map.setView([lat, lng], 14);
+                marker.setLatLng([lat, lng]);
+                currentLatLng = { lat, lng };
+                document.getElementById('errorMap').style.display = 'none';
+                showToastMsg("تم تحديد موقعك بنجاح ✅");
+            },
+            () => showToastMsg("فشل تحديد الموقع، تأكد من تشغيل GPS", true)
+        );
+    }
+
+    // تحديث الأحياء
+    function updateNeighborhoods() {
+        const citySelect = document.getElementById('city');
+        const neighborhoodSelect = document.getElementById('neighborhood');
+        const selectedCity = citySelect.value;
+        neighborhoodSelect.innerHTML = '<option value="">-- اختر الحي --</option>';
+        if (selectedCity && citiesData[selectedCity]) {
+            citiesData[selectedCity].forEach(hood => {
+                const option = document.createElement('option');
+                option.value = hood;
+                option.textContent = hood;
+                neighborhoodSelect.appendChild(option);
+            });
+        }
+    }
+    document.getElementById('city').addEventListener('change', updateNeighborhoods);
+
+    function showError(id, msg) {
+        const el = document.getElementById(id);
+        if (el) { el.innerText = msg; el.style.display = 'block'; }
+    }
+    function hideError(id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    }
+    function showToastMsg(msg, isError = false) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.backgroundColor = isError ? '#ef4444' : '#22c55e';
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 3000);
+    }
+
+    let demoMode = false;
+    const demoCheckbox = document.getElementById('demoModeCheckbox');
+    if (demoCheckbox) {
+        demoCheckbox.addEventListener('change', (e) => {
+            demoMode = e.target.checked;
+            showToastMsg(demoMode ? "✅ الوضع التجريبي: يمكنك المتابعة دون تعبئة" : "الوضع العادي: جميع الحقول مطلوبة");
+        });
+    }
+
+    function validateForm() {
+        if (demoMode) return true;
+        let isValid = true;
+        const name = document.getElementById('fullName').value.trim();
+        const mobile = document.getElementById('mobile').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const city = document.getElementById('city').value;
+        const neighborhood = document.getElementById('neighborhood').value;
+        const emailRegex = /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/;
+        
+        if (!name) { showError('errorName', 'الاسم مطلوب'); isValid = false; } else hideError('errorName');
+        if (!mobile.match(/^05\d{8}$/)) { showError('errorMobile', 'يجب أن يبدأ بـ 05 ويتكون من 10 أرقام'); isValid = false; } else hideError('errorMobile');
+        if (!email) { showError('errorEmail', 'البريد الإلكتروني مطلوب'); isValid = false; } else if (!emailRegex.test(email)) { showError('errorEmail', 'صيغة بريد غير صالحة'); isValid = false; } else hideError('errorEmail');
+        if (!password) { showError('errorPassword', 'كلمة المرور مطلوبة'); isValid = false; } else if (password.length < 8) { showError('errorPassword', 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'); isValid = false; } else hideError('errorPassword');
+        if (!city) { showError('errorCity', 'يرجى اختيار المدينة'); isValid = false; } else hideError('errorCity');
+        if (!neighborhood) { showError('errorNeighborhood', 'يرجى اختيار الحي'); isValid = false; } else hideError('errorNeighborhood');
+        if (!currentLatLng) { showError('errorMap', 'يرجى تحديد الموقع على الخريطة'); isValid = false; } else hideError('errorMap');
+        
+        return isValid;
+    }
+
+    function collectFormData() {
+        return {
+            fullName: document.getElementById('fullName').value.trim(),
+            mobile: document.getElementById('mobile').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            password: document.getElementById('password').value,
+            city: document.getElementById('city').value,
+            neighborhood: document.getElementById('neighborhood').value,
+            latitude: currentLatLng.lat,
+            longitude: currentLatLng.lng,
+            role: 'customer'
+        };
+    }
+
+    async function saveToFirebase(formData) {
+        try {
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+            const { getAuth, createUserWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+            const { getFirestore, doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            
+            const firebaseConfig = {
+                apiKey: "AIzaSyBrTaYLYWW9H31_O6fWL_36BKB4Oim0ksM",
+                authDomain: "techcare-80c7b.firebaseapp.com",
+                projectId: "techcare-80c7b",
+                storageBucket: "techcare-80c7b.firebasestorage.app",
+                messagingSenderId: "94772613240",
+                appId: "1:94772613240:web:3d0ae9c03561e7c6bb1d8d",
+                measurementId: "G-59VFXVH57V"
+            };
+            
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            
+            const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+            const uid = userCredential.user.uid;
+            
+            const userData = {
+                fullName: formData.fullName,
+                mobile: formData.mobile,
+                email: formData.email,
+                city: formData.city,
+                neighborhood: formData.neighborhood,
+                latitude: formData.latitude,
+                longitude: formData.longitude,
+                role: formData.role,
+                createdAt: new Date().toISOString()
+            };
+            
+            await setDoc(doc(db, 'customers', uid), userData);
+            saveCurrentUser({ ...userData, uid, role: 'customer' });
+            
+            return true;
+        } catch (error) {
+            console.error(error);
+            showToastMsg('خطأ في التسجيل: ' + error.message, true);
+            return false;
+        }
+    }
+
+    async function saveAfterSubmit() {
+        if (demoMode) {
+            const demoCustomer = {
+                fullName: "مستخدم تجريبي",
+                mobile: "0512345678",
+                email: "demo@example.com",
+                city: "الرياض",
+                neighborhood: "الملقا",
+                latitude: 24.7136,
+                longitude: 46.6753,
+                role: "customer"
+            };
+            saveCustomer(demoCustomer);
+            saveCurrentUser(demoCustomer);
+            showToastMsg("تم حفظ بيانات تجريبية ✅");
+            window.location.href = "customer-dashboard.html";
+            return;
+        }
+        
+        const formData = collectFormData();
+        const success = await saveToFirebase(formData);
+        
+        if (success) {
+            showToastMsg("تم التسجيل بنجاح ✅");
+            setTimeout(() => {
+                window.location.href = "customer-dashboard.html";
+            }, 1500);
+        }
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+        if (validateForm()) saveAfterSubmit();
+    });
+    
+    document.getElementById('continueBtn').addEventListener('click', () => {
+        if (validateForm()) saveAfterSubmit();
+    });
+
+    window.addEventListener('load', () => {
+        initMap();
+        document.getElementById('getLocationBtn').addEventListener('click', getCurrentLocation);
+        updateNeighborhoods();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechCare</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            direction: rtl;
+            padding: 20px;
+        }
+        .container { text-align: center; }
+        h1 { color: white; font-size: 3rem; margin-bottom: 20px; }
+        .subtitle { color: rgba(255,255,255,0.9); margin-bottom: 50px; }
+        .links { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        .btn {
+            background: white; color: #1e40af; padding: 15px 30px;
+            border-radius: 50px; text-decoration: none; font-weight: bold;
+            font-size: 1.2rem; transition: 0.3s;
+        }
+        .btn:hover { transform: scale(1.05); background: #e2e8f0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TechCare</h1>
+        <div class="subtitle">اختر التطبيق المناسب لك</div>
+        <div class="links">
+            <a href="Customer-App/index.html" class="btn">👤 تطبيق العميل</a>
+            <a href="Technician-App/index.html" class="btn">🔧 تطبيق الفني</a>
+            <a href="Merchant-App/index.html" class="btn">📦 تطبيق التاجر</a>
+        </div>
+    </div>
+</body>
+</html>

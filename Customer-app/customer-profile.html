@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>ملفي الشخصي - TechCare</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #f8fafc;
+            direction: rtl;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        /* رأس الصفحة */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #1e40af;
+        }
+        .edit-profile-btn {
+            background: #eef2ff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e40af;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        /* صورة الملف الشخصي */
+        .profile-pic {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .avatar {
+            width: 100px;
+            height: 100px;
+            background: #3b82f6;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .user-name {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 8px;
+            color: #0f172a;
+        }
+        .user-username {
+            text-align: center;
+            color: #475569;
+            margin-bottom: 16px;
+            direction: ltr;
+            font-size: 14px;
+        }
+        /* أيقونات إضافية */
+        .info-icons {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin: 16px 0 24px;
+        }
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #475569;
+            font-size: 14px;
+        }
+        .info-item i {
+            font-size: 18px;
+            color: #3b82f6;
+        }
+        /* قسم الطلبات */
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 24px 0 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .view-all {
+            font-size: 14px;
+            color: #3b82f6;
+            cursor: pointer;
+        }
+        .order-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+        }
+        .order-info {
+            flex: 2;
+        }
+        .order-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .order-date {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .order-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background: #e2e8f0;
+        }
+        .status-completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-pending {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        .status-cancelled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .details-btn {
+            background: #eef2ff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #1e40af;
+        }
+        .empty-orders {
+            text-align: center;
+            color: #64748b;
+            padding: 20px;
+        }
+        .demo-toggle {
+            background: #f1f5f9;
+            padding: 8px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        @media (max-width: 500px) {
+            .order-card {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .details-btn {
+                margin-top: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- وضع تجريبي (اختياري) -->
+    <div class="demo-toggle">
+        <input type="checkbox" id="demoModeCheckbox">
+        <label for="demoModeCheckbox">🧪 وضع تجريبي (عرض بيانات وهمية)</label>
+    </div>
+
+    <!-- رأس الصفحة -->
+    <div class="header">
+        <button class="back-btn" id="backBtn"><i class="fas fa-arrow-right"></i></button>
+        <button class="edit-profile-btn" id="editProfileBtn"><i class="fas fa-pen"></i> تعديل الحساب</button>
+    </div>
+
+    <!-- صورة واسم -->
+    <div class="profile-pic">
+        <div class="avatar">
+            <i class="fas fa-user"></i>
+        </div>
+        <div class="user-name" id="userName">أحمد محمد</div>
+        <div class="user-username" id="userUsername">@ahmed_m</div>
+    </div>
+
+    <!-- أيقونات إضافية -->
+    <div class="info-icons">
+        <div class="info-item"><i class="fas fa-map-marker-alt"></i> <span id="userCity">الرياض</span></div>
+        <div class="info-item"><i class="fas fa-calendar-alt"></i> <span id="userSince">مستخدم منذ 3 سنوات</span></div>
+    </div>
+
+    <!-- طلباتي الأخيرة -->
+    <div class="section-title">
+        طلباتي الأخيرة
+        <span class="view-all" id="viewAllOrders">عرض الكل →</span>
+    </div>
+    <div id="ordersList"></div>
+</div>
+
+<script>
+    // Helper: عرض رسائل
+    function showToast(msg, isError = false) {
+        let toast = document.getElementById('toast');
+        if (!toast) {
+            const div = document.createElement('div');
+            div.id = 'toast';
+            div.style.cssText = `position:fixed; bottom:30px; left:20px; right:20px; background:#22c55e; color:white; padding:12px; border-radius:60px; text-align:center; z-index:1100; display:none;`;
+            document.body.appendChild(div);
+            toast = div;
+        }
+        toast.innerText = msg;
+        toast.style.backgroundColor = isError ? '#ef4444' : '#22c55e';
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 3000);
+    }
+
+    let demoMode = false;
+    const demoCheck = document.getElementById('demoModeCheckbox');
+    demoCheck.addEventListener('change', () => {
+        demoMode = demoCheck.checked;
+        loadProfileData();
+        loadOrders();
+        showToast(demoMode ? "وضع تجريبي: بيانات وهمية" : "وضع عادي: بيانات حقيقية");
+    });
+
+    function loadProfileData() {
+        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+        if (demoMode || !currentUser.fullName) {
+            // بيانات وهمية
+            document.getElementById('userName').innerText = "أحمد محمد";
+            document.getElementById('userUsername').innerText = "@ahmed_m";
+            document.getElementById('userCity').innerText = "الرياض";
+            document.getElementById('userSince').innerHTML = "مستخدم منذ 3 سنوات";
+        } else {
+            document.getElementById('userName').innerText = currentUser.fullName || "مستخدم";
+            let username = currentUser.mobile || currentUser.email || "user";
+            document.getElementById('userUsername').innerText = `@${username.substring(0,10)}`;
+            document.getElementById('userCity').innerText = currentUser.city || "الرياض";
+            // حساب تاريخ التسجيل (افتراضي)
+            let joinDate = currentUser.createdAt ? new Date(currentUser.createdAt) : new Date();
+            let years = Math.floor((new Date() - joinDate) / (1000*60*60*24*365));
+            years = years < 1 ? 1 : years;
+            document.getElementById('userSince').innerHTML = `مستخدم منذ ${years} سنة`;
+        }
+    }
+
+    function loadOrders() {
+        let orders = JSON.parse(localStorage.getItem('serviceRequests')) || [];
+        if (demoMode || orders.length === 0) {
+            // بيانات وهمية
+            orders = [
+                { serviceType: "تصليح جوال ايفون", deviceModel: "iPhone 12", description: "شاشة مكسورة", status: "مكتمل", createdAt: new Date('2025-06-01').toISOString() },
+                { serviceType: "تركيب مكيف", deviceModel: "سبليت 24000", description: "تركيب جديد", status: "مكتمل", createdAt: new Date('2025-05-28').toISOString() },
+                { serviceType: "صيانة غسالة", deviceModel: "LG", description: "لا تصرف الماء", status: "ملغي", createdAt: new Date('2025-05-20').toISOString() }
+            ];
+        }
+        // ترتيب تنازلي حسب التاريخ
+        orders.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const lastThree = orders.slice(0,3);
+        const container = document.getElementById('ordersList');
+        container.innerHTML = '';
+        if (lastThree.length === 0) {
+            container.innerHTML = '<div class="empty-orders">📭 لا توجد طلبات سابقة</div>';
+            return;
+        }
+        lastThree.forEach(order => {
+            const date = new Date(order.createdAt).toLocaleDateString('ar-EG');
+            let statusClass = '';
+            let statusText = order.status;
+            if (order.status === 'مكتمل') statusClass = 'status-completed';
+            else if (order.status === 'قيد الانتظار') statusClass = 'status-pending';
+            else statusClass = 'status-cancelled';
+            const card = document.createElement('div');
+            card.className = 'order-card';
+            card.innerHTML = `
+                <div class="order-info">
+                    <div class="order-title">${order.serviceType} - ${order.deviceModel || ''}</div>
+                    <div class="order-date">${date}</div>
+                </div>
+                <div class="order-status ${statusClass}">${statusText}</div>
+                <button class="details-btn" data-order-id="${order.id || order.createdAt}">التفاصيل</button>
+            `;
+            container.appendChild(card);
+        });
+        // ربط أزرار التفاصيل
+        document.querySelectorAll('.details-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showToast("سيتم فتح صفحة تفاصيل الطلب قريباً", false);
+            });
+        });
+    }
+
+    // ربط الأزرار
+    document.getElementById('backBtn').addEventListener('click', () => {
+        window.location.href = "customer-dashboard.html";
+    });
+    document.getElementById('editProfileBtn').addEventListener('click', () => {
+        showToast("صفحة تعديل الملف الشخصي قيد التطوير", false);
+    });
+    document.getElementById('viewAllOrders').addEventListener('click', () => {
+        window.location.href = "my-orders.html";
+    });
+
+    // تحميل البيانات
+    loadProfileData();
+    loadOrders();
+</script>
+</body>
+</html>

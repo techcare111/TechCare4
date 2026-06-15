@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>لوحة الفني - TechCare</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../common/storage.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Cairo', sans-serif; background: #f8fafc; direction: rtl; padding-bottom: 20px; }
+        .app-bar { background: #065f46; color: white; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .menu-icon, .wallet-icon { font-size: 24px; cursor: pointer; background: none; border: none; color: white; position: relative; }
+        .app-title { font-size: 20px; font-weight: bold; }
+        .wallet-amount { background: rgba(255,255,255,0.2); border-radius: 40px; padding: 4px 10px; font-size: 14px; margin-right: 8px; }
+        .drawer { position: fixed; top: 0; right: -280px; width: 280px; height: 100%; background: white; transition: 0.3s; z-index: 200; padding: 70px 20px 20px; box-shadow: -2px 0 8px rgba(0,0,0,0.1); }
+        .drawer.open { right: 0; }
+        .drawer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); visibility: hidden; z-index: 150; transition: 0.3s; }
+        .drawer-overlay.active { visibility: visible; }
+        .drawer a { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #1e293b; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
+        .drawer .user-welcome { font-weight: bold; color: #065f46; margin-bottom: 20px; font-size: 18px; }
+        .container { max-width: 700px; margin: 0 auto; padding: 16px; }
+        .attendance-card { background: #f1f5f9; border-radius: 28px; padding: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .status-btn { background: #10b981; border: none; padding: 10px 20px; border-radius: 40px; color: white; font-weight: bold; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .status-btn.inactive { background: #94a3b8; }
+        .requests-count { font-size: 14px; color: #065f46; background: white; padding: 4px 12px; border-radius: 40px; }
+        .filters { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 20px; }
+        .filter-chip { background: white; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 40px; font-size: 14px; white-space: nowrap; cursor: pointer; }
+        .filter-chip.active { background: #10b981; color: white; border-color: #10b981; }
+        .request-card { background: white; border-radius: 24px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; }
+        .request-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .device-name { font-weight: bold; font-size: 16px; }
+        .customer-name { font-size: 14px; color: #475569; }
+        .rating { color: #f59e0b; font-size: 12px; }
+        .problem { font-size: 14px; color: #334155; margin-bottom: 8px; }
+        .location-distance { display: flex; justify-content: space-between; font-size: 13px; color: #64748b; margin-bottom: 12px; }
+        .btn-description { background: #eef2ff; border: none; padding: 6px 12px; border-radius: 40px; font-size: 12px; cursor: pointer; color: #065f46; }
+        .action-buttons { display: flex; gap: 12px; margin-top: 12px; justify-content: flex-end; }
+        .btn-accept { background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 40px; cursor: pointer; }
+        .btn-details { background: #e2e8f0; color: #1e293b; border: none; padding: 8px 16px; border-radius: 40px; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 300; }
+        .modal-content { background: white; border-radius: 32px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; padding: 20px; }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+        .toast { position: fixed; bottom: 30px; left: 20px; right: 20px; background: #22c55e; color: white; padding: 12px; border-radius: 60px; text-align: center; z-index: 1100; display: none; }
+        audio { display: none; }
+        .images-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .images-preview img, .images-preview video { width: 80px; height: 80px; border-radius: 12px; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+<audio id="newRequestSound" preload="auto">
+    <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" type="audio/mpeg">
+</audio>
+<audio id="acceptSound" preload="auto">
+    <source src="https://www.soundjay.com/misc/sounds/button-click-02.mp3" type="audio/mpeg">
+</audio>
+
+<div class="app-bar">
+    <button class="menu-icon" id="menuBtn"><i class="fas fa-bars"></i></button>
+    <div class="app-title">TechCare</div>
+    <div class="wallet-icon" id="walletBtn">
+        <i class="fas fa-wallet"></i>
+        <span class="wallet-amount" id="walletAmount">0</span>
+    </div>
+</div>
+
+<div class="drawer" id="drawer">
+    <div class="user-welcome" id="drawerWelcome">مرحباً... فني</div>
+    <a href="#" id="maintenanceOrdersLink"><i class="fas fa-tools"></i> طلبات الصيانة</a>
+    <a href="favorites.html"><i class="fas fa-heart"></i> قائمة المفضلة</a>
+    <a href="notifications.html"><i class="fas fa-bell"></i> الإشعارات</a>
+    <a href="complaints.html"><i class="fas fa-gavel"></i> حل المشكلات والنزاعات</a>
+    <a href="#"><i class="fas fa-phone-alt"></i> اتصل بنا</a>
+    <a href="#" id="technicianBagLink"><i class="fas fa-briefcase"></i> حقيبة الفني</a>
+    <a href="#"><i class="fas fa-file-contract"></i> سياسات الموقع</a>
+    <a href="../common/language.html?return=../Technician-App/technician-dashboard.html"><i class="fas fa-language"></i> تغيير اللغة</a>
+    <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a>
+</div>
+<div class="drawer-overlay" id="drawerOverlay"></div>
+
+<div class="container">
+    <div class="attendance-card">
+        <button class="status-btn" id="attendanceBtn">
+            <i class="fas fa-power-off"></i> <span id="attendanceText">جاهز للعمل</span>
+        </button>
+        <div class="requests-count" id="newRequestsCount">طلبات جديدة: 0</div>
+    </div>
+
+    <div class="filters" id="filtersContainer">
+        <div class="filter-chip active" data-filter="all">الكل</div>
+        <div class="filter-chip" data-filter="phones">📱 جوالات</div>
+        <div class="filter-chip" data-filter="tablets">📟 أجهزة لوحية</div>
+        <div class="filter-chip" data-filter="laptops">💻 لابتوبات</div>
+        <div class="filter-chip" data-filter="office">🖥️ أجهزة مكتبية</div>
+        <div class="filter-chip" data-filter="smartwatches">⌚ ساعات ذكية</div>
+        <div class="filter-chip" data-filter="home">🏠 أجهزة منزلية</div>
+    </div>
+
+    <div id="requestsList"></div>
+</div>
+
+<div id="detailsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>تفاصيل الطلب</h3>
+            <button class="close-modal" id="closeModalBtn"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="modalBody"></div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    let currentUser = getCurrentUser();
+    if (!currentUser || currentUser.role !== 'technician') {
+        window.location.href = "login.html";
+    }
+    sessionStorage.setItem('userRole', 'technician');
+    sessionStorage.setItem('userMobile', currentUser.mobile);
+    
+    document.getElementById('drawerWelcome').innerText = `مرحباً... ${currentUser.fullName || 'فني'}`;
+    document.getElementById('walletAmount').innerText = currentUser.walletBalance || 0;
+
+    let isActive = currentUser.isActive || false;
+    let currentLocation = currentUser.lastLocation || null;
+    let allRequests = [];
+    let currentFilter = 'all';
+    let updateInterval = null;
+    let lastRequestsIds = [];
+
+    function updateAttendanceUI() {
+        const btn = document.getElementById('attendanceBtn');
+        const textSpan = document.getElementById('attendanceText');
+        if (isActive) {
+            btn.classList.remove('inactive');
+            textSpan.innerText = '🟢 جاهز للعمل';
+        } else {
+            btn.classList.add('inactive');
+            textSpan.innerText = '⚪ غير متصل';
+        }
+    }
+
+    function enableAttendance() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                currentLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+                isActive = true;
+                updateTechnicianStatus(currentUser.mobile, true, currentLocation.lat, currentLocation.lng);
+                currentUser.isActive = true;
+                currentUser.lastLocation = currentLocation;
+                saveCurrentUser(currentUser);
+                updateAttendanceUI();
+                showToast("✅ تم تفعيل الحضور، أنت الآن مرئي للعملاء");
+                loadRequests();
+            }, () => showToast("⚠️ فشل تحديد موقعك، تأكد من تشغيل GPS", true));
+        } else {
+            showToast("المتصفح لا يدعم تحديد الموقع", true);
+        }
+    }
+
+    function disableAttendance() {
+        isActive = false;
+        updateTechnicianStatus(currentUser.mobile, false, null, null);
+        currentUser.isActive = false;
+        saveCurrentUser(currentUser);
+        updateAttendanceUI();
+        showToast("تم إيقاف الحضور، لن تظهر على خريطة العملاء");
+        loadRequests();
+    }
+
+    document.getElementById('attendanceBtn').addEventListener('click', () => {
+        if (isActive) disableAttendance();
+        else enableAttendance();
+    });
+
+    function getDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return (R * c).toFixed(1);
+    }
+    function getMinutesFromDistance(km) { return Math.round(km * 3); }
+
+    function loadRequests() {
+        let requests = getServiceRequests();
+        let pending = requests.filter(req => !req.assignedTechnician && req.status === 'قيد الانتظار');
+        if (currentFilter !== 'all') {
+            pending = pending.filter(req => req.category === currentFilter);
+        }
+        if (currentLocation) {
+            pending.forEach(req => {
+                if (req.location) {
+                    req.distance = getDistance(currentLocation.lat, currentLocation.lng, req.location.lat, req.location.lng);
+                    req.minutes = getMinutesFromDistance(req.distance);
+                } else { req.distance = 999; req.minutes = 999; }
+            });
+            pending.sort((a,b) => a.distance - b.distance);
+        }
+        renderRequests(pending);
+        const currentIds = pending.map(r => r.id);
+        const newIds = currentIds.filter(id => !lastRequestsIds.includes(id));
+        if (newIds.length > 0 && isActive) {
+            document.getElementById('newRequestSound').play();
+            showToast(`🔔 لديك ${newIds.length} طلب جديد`);
+            let notifs = getNotifications();
+            notifs.push({ title: "طلب جديد", message: `لديك ${newIds.length} طلب صيانة جديد`, timestamp: new Date().toISOString() });
+            localStorage.setItem('notifications', JSON.stringify(notifs));
+        }
+        lastRequestsIds = currentIds;
+        document.getElementById('newRequestsCount').innerText = `طلبات جديدة: ${pending.length}`;
+    }
+
+    function renderRequests(requests) {
+        const container = document.getElementById('requestsList');
+        container.innerHTML = '';
+        if (requests.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#64748b;">🚫 لا توجد طلبات جديدة</div>';
+            return;
+        }
+        requests.forEach(req => {
+            const card = document.createElement('div');
+            card.className = 'request-card';
+            let distanceText = (req.distance && req.distance !== 999) ? `${req.minutes} دقيقة 🚗` : 'مسافة غير محددة';
+            card.innerHTML = `
+                <div class="request-header">
+                    <span class="device-name">${req.deviceModel || req.type || 'جهاز'}</span>
+                    <span class="customer-name">${req.customerName || 'عميل'}</span>
+                </div>
+                <div class="problem">${req.description ? req.description.substring(0,60) : 'وصف غير متوفر'}</div>
+                <div class="location-distance">
+                    <span>📍 حي ${req.neighborhood || 'غير محدد'}</span>
+                    <span>${distanceText}</span>
+                </div>
+                <button class="btn-description" data-req-id="${req.id}">📄 وصف العطل</button>
+                <div class="action-buttons" style="display: none;">
+                    <button class="btn-accept" data-req-id="${req.id}">✓ قبول الطلب</button>
+                    <button class="btn-details" data-req-id="${req.id}">التفاصيل</button>
+                </div>
+            `;
+            card.addEventListener('click', (e) => {
+                if (e.target.classList.contains('btn-description') || e.target.classList.contains('btn-accept') || e.target.classList.contains('btn-details')) return;
+                const actionsDiv = card.querySelector('.action-buttons');
+                actionsDiv.style.display = actionsDiv.style.display === 'none' ? 'flex' : 'none';
+            });
+            container.appendChild(card);
+        });
+        document.querySelectorAll('.btn-description').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const reqId = btn.getAttribute('data-req-id');
+                const request = getServiceRequests().find(r => r.id == reqId);
+                if (request) showDescriptionModal(request);
+            });
+        });
+        document.querySelectorAll('.btn-accept').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const reqId = btn.getAttribute('data-req-id');
+                acceptRequest(reqId);
+            });
+        });
+        document.querySelectorAll('.btn-details').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const reqId = btn.getAttribute('data-req-id');
+                const request = getServiceRequests().find(r => r.id == reqId);
+                if (request) showFullDetailsModal(request);
+            });
+        });
+    }
+
+    function acceptRequest(requestId) {
+        let requests = getServiceRequests();
+        const reqIndex = requests.findIndex(r => r.id == requestId);
+        if (reqIndex !== -1) {
+            requests[reqIndex].assignedTechnician = { mobile: currentUser.mobile, name: currentUser.fullName };
+            requests[reqIndex].status = 'قيد التنفيذ';
+            localStorage.setItem('serviceRequests', JSON.stringify(requests));
+            document.getElementById('acceptSound').play();
+            showToast("✅ تم قبول الطلب، سيتم إشعار العميل");
+            let notifs = getNotifications();
+            notifs.push({ title: "تم قبول طلبك", message: `تم قبول طلبك من قبل الفني ${currentUser.fullName}`, timestamp: new Date().toISOString() });
+            localStorage.setItem('notifications', JSON.stringify(notifs));
+            loadRequests();
+        }
+    }
+
+    function showDescriptionModal(request) {
+        const modal = document.getElementById('detailsModal');
+        const modalBody = document.getElementById('modalBody');
+        modalBody.innerHTML = `
+            <div><strong>الجهاز:</strong> ${request.deviceModel || request.type}</div>
+            <div><strong>العطل:</strong> ${request.description || 'لا يوجد وصف'}</div>
+            <div><strong>الصور والفيديوهات:</strong></div>
+            <div class="images-preview">
+                ${request.files && request.files.length ? request.files.map(f => `<img src="${f}" style="width:80px; height:80px; border-radius:12px;">`).join('') : '<div>لا توجد مرفقات</div>'}
+            </div>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    function showFullDetailsModal(request) {
+        const modal = document.getElementById('detailsModal');
+        const modalBody = document.getElementById('modalBody');
+        modalBody.innerHTML = `
+            <div><strong>رقم الطلب:</strong> ${request.requestNumber || request.id}</div>
+            <div><strong>العميل:</strong> ${request.customerName}</div>
+            <div><strong>رقم العميل:</strong> ${request.customerMobile}</div>
+            <div><strong>الجهاز:</strong> ${request.deviceModel || request.type}</div>
+            <div><strong>العطل:</strong> ${request.description}</div>
+            <div><strong>الموقع:</strong> ${request.neighborhood || 'غير محدد'}</div>
+            <div><strong>المرفقات:</strong></div>
+            <div class="images-preview">
+                ${request.files && request.files.length ? request.files.map(f => `<img src="${f}" style="width:80px; height:80px; border-radius:12px;">`).join('') : '<div>لا توجد</div>'}
+            </div>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    document.getElementById('closeModalBtn').addEventListener('click', () => {
+        document.getElementById('detailsModal').style.display = 'none';
+    });
+    window.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('detailsModal')) document.getElementById('detailsModal').style.display = 'none';
+    });
+
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            currentFilter = chip.getAttribute('data-filter');
+            loadRequests();
+        });
+    });
+
+    if (updateInterval) clearInterval(updateInterval);
+    updateInterval = setInterval(() => { if (isActive) loadRequests(); }, 30000);
+
+    const drawer = document.getElementById('drawer');
+    const overlay = document.getElementById('drawerOverlay');
+    document.getElementById('menuBtn').onclick = () => { drawer.classList.add('open'); overlay.classList.add('active'); };
+    overlay.onclick = () => { drawer.classList.remove('open'); overlay.classList.remove('active'); };
+    document.querySelectorAll('.drawer a').forEach(link => {
+        link.addEventListener('click', () => {
+            drawer.classList.remove('open'); overlay.classList.remove('active');
+        });
+    });
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('currentUser');
+        window.location.href = "login.html";
+    });
+    document.getElementById('walletBtn').addEventListener('click', () => {
+        showToast(`💰 رصيدك الحالي: ${currentUser.walletBalance || 0} ريال`);
+    });
+
+    function showToast(msg, isError = false) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.backgroundColor = isError ? '#ef4444' : '#22c55e';
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 3000);
+    }
+
+    loadRequests();
+    updateAttendanceUI();
+    if (isActive && !currentLocation) enableAttendance();
+</script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>الدعم المباشر - TechCare</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="../common/storage.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #f8fafc;
+            direction: rtl;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-height: 90vh;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .chat-header {
+            background: #065f46;
+            color: white;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .chat-header i {
+            font-size: 24px;
+        }
+        .chat-header h3 {
+            flex: 1;
+        }
+        .close-chat {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #f9fafb;
+        }
+        .message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            word-wrap: break-word;
+        }
+        .message.sent {
+            background: #10b981;
+            color: white;
+            align-self: flex-start;
+            border-bottom-right-radius: 4px;
+        }
+        .message.received {
+            background: #e2e8f0;
+            color: #0f172a;
+            align-self: flex-end;
+            border-bottom-left-radius: 4px;
+        }
+        .message-time {
+            font-size: 10px;
+            margin-top: 4px;
+            opacity: 0.7;
+            text-align: left;
+        }
+        .chat-input {
+            display: flex;
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            gap: 12px;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 40px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .chat-input button {
+            background: #10b981;
+            color: white;
+            border: none;
+            width: 48px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .back-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+<div class="chat-container">
+    <div class="chat-header">
+        <i class="fas fa-headset"></i>
+        <h3>الدعم الفني (TechCare Support)</h3>
+        <button class="close-chat" id="closeChatBtn"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+        <!-- الرسائل ستظهر هنا -->
+    </div>
+    <div class="chat-input">
+        <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا...">
+        <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+<button class="back-btn" id="backBtn">← رجوع</button>
+
+<script>
+    const currentUser = getCurrentUser();
+    if (!currentUser) window.location.href = "login.html";
+
+    document.getElementById('backBtn').onclick = () => {
+        window.location.href = "complaints.html";
+    };
+
+    const storageKey = `support_chat_${currentUser.mobile}`;
+    let messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+    if (messages.length === 0) {
+        messages.push({
+            text: "مرحباً! كيف يمكنني مساعدتك اليوم؟",
+            sender: "support",
+            time: new Date().toISOString()
+        });
+        localStorage.setItem(storageKey, JSON.stringify(messages));
+    }
+
+    const chatDiv = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function renderMessages() {
+        chatDiv.innerHTML = '';
+        messages.forEach(msg => {
+            const isSent = msg.sender === 'customer';
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+            const time = new Date(msg.time).toLocaleTimeString('ar-EG', { hour: '2-digit', minute:'2-digit' });
+            msgDiv.innerHTML = `
+                <div>${msg.text}</div>
+                <div class="message-time">${time}</div>
+            `;
+            chatDiv.appendChild(msgDiv);
+        });
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+
+    function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text) return;
+        const customerMsg = {
+            text: text,
+            sender: "customer",
+            time: new Date().toISOString()
+        };
+        messages.push(customerMsg);
+        localStorage.setItem(storageKey, JSON.stringify(messages));
+        renderMessages();
+        messageInput.value = '';
+
+        setTimeout(() => {
+            const supportMsg = {
+                text: "شكراً لتواصلك. سيتم الرد عليك في أقرب وقت (محاكاة رد آلي). هل تحتاج مساعدة إضافية؟",
+                sender: "support",
+                time: new Date().toISOString()
+            };
+            messages.push(supportMsg);
+            localStorage.setItem(storageKey, JSON.stringify(messages));
+            renderMessages();
+        }, 1500);
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    document.getElementById('closeChatBtn').addEventListener('click', () => {
+        window.location.href = "complaints.html";
+    });
+
+    renderMessages();
+</script>
+</body>
+</html>

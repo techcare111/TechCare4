@@ -1,0 +1,17 @@
+:root {
+    --primary: #2196f3;
+    --primary-dark: #0b5e9e;
+    --bg-gradient: linear-gradient(135deg, #e0f2fe, #bae6fd);
+    --border-color: #e2e8f0;
+    --dark: #1e293b;
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    font-family: 'Cairo', 'Segoe UI', sans-serif;
+    background: var(--bg-gradient);
+    direction: rtl;
+}

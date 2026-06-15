@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>تسجيل فني</title>
+    <script src="../common/storage.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f4fa;
+            padding: 20px;
+            direction: rtl;
+        }
+        .demo-toggle {
+            background: #f1f5f9;
+            padding: 8px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        /* ========== Stepper جديد يعمل بشكل صحيح ========== */
+        .stepper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+        .step-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            z-index: 2;
+            transition: all 0.3s;
+        }
+        .step-circle.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.2);
+        }
+        .step-circle.done {
+            background: #22c55e;
+            color: white;
+        }
+        .step-label {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #64748b;
+            text-align: center;
+        }
+        .step-label.active {
+            color: #3b82f6;
+            font-weight: bold;
+        }
+        /* الخطوط بين الدوائر */
+        .step-wrapper {
+            position: relative;
+        }
+        .step-wrapper:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            right: calc(50% + 20px);
+            width: calc(100% - 40px);
+            height: 3px;
+            background: #e2e8f0;
+            z-index: 1;
+            transition: background 0.3s;
+        }
+        .step-wrapper.completed:not(:last-child)::after {
+            background: #3b82f6;
+        }
+        /* باقي التنسيقات */
+        .form-section { display: none; }
+        .form-section.active-section { display: block; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; color: #0f172a; }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 16px;
+            font-family: inherit;
+            background: white;
+            transition: 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        .file-input {
+            padding: 8px;
+            border: 2px dashed #e2e8f0;
+            background: #f8fafc;
+        }
+        .error-msg { color: #ef4444; font-size: 12px; margin-top: 4px; display: none; }
+        .conditional-group { display: none; }
+        .row-2col { display: flex; gap: 15px; }
+        .row-2col > div { flex: 1; }
+        @media (max-width: 600px) { .row-2col { flex-direction: column; } }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: #e2e8f0; color: #1e293b; }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .toast {
+            position: fixed; bottom: 30px; left: 20px; right: 20px;
+            background: #22c55e; color: white; padding: 12px;
+            border-radius: 60px; text-align: center; z-index: 1100; display: none;
+        }
+        .other-nationality { display: none; margin-top: 10px; }
+    </style>
+</head>
+<body>
+<!-- وضع تجريبي -->
+<div class="demo-toggle">
+    <input type="checkbox" id="demoModeCheckbox">
+    <label for="demoModeCheckbox">🧪 وضع تجريبي (تجاوز الحقول الإجبارية)</label>
+</div>
+<div class="container">
+    <!-- Stepper جديد -->
+    <div class="stepper" id="stepper">
+        <div class="step-wrapper" data-step="1" id="stepWrapper1">
+            <div class="step-circle" id="step1Circle">1</div>
+            <div class="step-label" id="step1Label">المعلومات الأساسية</div>
+        </div>
+        <div class="step-wrapper" data-step="2" id="stepWrapper2">
+            <div class="step-circle" id="step2Circle">2</div>
+            <div class="step-label" id="step2Label">المؤهلات والخبرات</div>
+        </div>
+        <div class="step-wrapper" data-step="3" id="stepWrapper3">
+            <div class="step-circle" id="step3Circle">3</div>
+            <div class="step-label" id="step3Label">الحساب البنكي</div>
+        </div>
+    </div>
+
+    <!-- Step 1 -->
+    <div id="step1" class="form-section active-section">
+        <div class="form-group">
+            <label id="labelFreelance">هل أنت فرد حر؟ <span style="color:red;">*</span></label>
+            <select id="isFreelance">
+                <option value="">-- اختر --</option>
+                <option value="yes">نعم، أنا فرد حر</option>
+                <option value="no">لا، أنا تابع لمؤسسة</option>
+            </select>
+            <div class="error-msg" id="errorFreelance"></div>
+        </div>
+        <div class="form-group">
+            <label id="labelNationality">الجنسية <span style="color:red;">*</span></label>
+            <select id="nationality">
+                <option value="">-- اختر --</option>
+                <option value="saudi">🇸🇦 سعودي</option>
+                <option value="egypt">🇪🇬 مصري</option>
+                <option value="sudan">🇸🇩 سوداني</option>
+                <option value="yemen">🇾🇪 يمني</option>
+                <option value="jordan">🇯🇴 أردني</option>
+                <option value="syria">🇸🇾 سوري</option>
+                <option value="lebanon">🇱🇧 لبناني</option>
+                <option value="palestine">🇵🇸 فلسطيني</option>
+                <option value="iraq">🇮🇶 عراقي</option>
+                <option value="kuwait">🇰🇼 كويتي</option>
+                <option value="bahrain">🇧🇭 بحريني</option>
+                <option value="qatar">🇶🇦 قطري</option>
+                <option value="uae">🇦🇪 إماراتي</option>
+                <option value="oman">🇴🇲 عماني</option>
+                <option value="algeria">🇩🇿 جزائري</option>
+                <option value="morocco">🇲🇦 مغربي</option>
+                <option value="tunisia">🇹🇳 تونسي</option>
+                <option value="libya">🇱🇾 ليبي</option>
+                <option value="mauritania">🇲🇷 موريتاني</option>
+                <option value="india">🇮🇳 هندي</option>
+                <option value="pakistan">🇵🇰 باكستاني</option>
+                <option value="bangladesh">🇧🇩 بنغلاديشي</option>
+                <option value="srilanka">🇱🇰 سريلانكي</option>
+                <option value="nepal">🇳🇵 نيبالي</option>
+                <option value="philippines">🇵🇭 فلبيني</option>
+                <option value="indonesia">🇮🇩 إندونيسي</option>
+                <option value="myanmar">🇲🇲 ميانماري</option>
+                <option value="turkey">🇹🇷 تركي</option>
+                <option value="other">أخرى</option>
+            </select>
+            <div class="other-nationality" id="otherNationalityDiv">
+                <input type="text" id="otherNationality" placeholder="اكتب جنسيتك">
+                <div class="error-msg" id="errorOtherNationality"></div>
+            </div>
+            <div class="error-msg" id="errorNationality"></div>
+        </div>
+        <div id="companyFields" class="conditional-group">
+            <div class="form-group">
+                <label id="labelCompanyName">اسم المؤسسة <span style="color:red;">*</span></label>
+                <input type="text" id="companyName">
+                <div class="error-msg" id="errorCompanyName"></div>
+            </div>
+            <div class="form-group">
+                <label id="labelCRNumber">رقم السجل التجاري <span style="color:red;">*</span></label>
+                <input type="text" id="crNumber">
+                <div class="error-msg" id="errorCRNumber"></div>
+            </div>
+            <div class="form-group">
+                <label id="labelCRFile">إرفاق السجل التجاري <span style="color:red;">*</span></label>
+                <input type="file" id="crFile" accept=".pdf,.jpg,.jpeg,.png" class="file-input">
+                <div class="error-msg" id="errorCrFile"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label id="labelIdNumber">رقم الهوية <span style="color:red;">*</span></label>
+            <input type="text" id="idNumber" placeholder="رقم الهوية الوطنية أو الإقامة">
+            <div class="error-msg" id="errorIdNumber"></div>
+        </div>
+        <div class="form-group">
+            <label id="labelNationalAddress">إرفاق صورة من العنوان الوطني <span style="color:red;">*</span></label>
+            <input type="file" id="nationalAddress" accept=".pdf,.jpg,.jpeg,.png" class="file-input">
+            <div class="error-msg" id="errorNationalAddress"></div>
+        </div>
+        <div class="row-2col">
+            <div class="form-group">
+                <label id="labelCity">المدينة <span style="color:red;">*</span></label>
+                <select id="city">
+                    <option value="">-- اختر --</option>
+                    <option value="الرياض">الرياض</option>
+                    <option value="جدة">جدة</option>
+                    <option value="مكة">مكة</option>
+                    <option value="الدمام">الدمام</option>
+                </select>
+                <div class="error-msg" id="errorCity"></div>
+            </div>
+            <div class="form-group">
+                <label id="labelNeighborhood">الحي <span style="color:red;">*</span></label>
+                <select id="neighborhood">
+                    <option value="">-- اختر --</option>
+                </select>
+                <div class="error-msg" id="errorNeighborhood"></div>
+            </div>
+        </div>
+        <div class="row-2col">
+            <div class="form-group">
+                <label id="labelMobile">رقم الجوال <span style="color:red;">*</span></label>
+                <input type="tel" id="mobile" placeholder="05xxxxxxxx" maxlength="10">
+                <div class="error-msg" id="errorMobile"></div>
+            </div>
+            <div class="form-group">
+                <label id="labelEmail">البريد الإلكتروني <span style="color:red;">*</span></label>
+                <input type="email" id="email">
+                <div class="error-msg" id="errorEmail"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label id="labelPassword">كلمة المرور <span style="color:red;">*</span></label>
+            <input type="password" id="password" placeholder="********">
+            <div class="error-msg" id="errorPassword"></div>
+        </div>
+        <div id="freelanceDocGroup" class="form-group" style="display:none;">
+            <label id="labelFreelanceDoc">ارفاق وثيقة العمل الحر (إن وجدت)</label>
+            <input type="file" id="freelanceDoc" accept=".pdf,.jpg,.jpeg,.png" class="file-input">
+        </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div id="step2" class="form-section">
+        <div class="form-group">
+            <label id="labelEducation">المؤهل الدراسي <span style="color:red;">*</span></label>
+            <select id="education">
+                <option value="">-- اختر --</option>
+                <option value="ثانوي">ثانوي</option>
+                <option value="بكالوريوس">بكالوريوس</option>
+                <option value="دراسات عليا">دراسات عليا</option>
+            </select>
+            <div class="error-msg" id="errorEducation"></div>
+        </div>
+        <div class="form-group">
+            <label id="labelCertificate">إرفاق الشهادة الدراسية <span style="color:red;">*</span></label>
+            <input type="file" id="certificate" accept=".pdf,.jpg,.jpeg,.png" class="file-input">
+            <div class="error-msg" id="errorCertificate"></div>
+        </div>
+        <div class="form-group">
+            <label id="labelProfessionalCerts">إضافة شهادات مهنية (اختياري)</label>
+            <input type="file" id="professionalCertFile" accept=".pdf,.jpg,.jpeg,.png" class="file-input">
+        </div>
+        <div class="form-group">
+            <label id="labelExperience">إضافة خبرات (اختياري)</label>
+            <input type="file" id="experienceFile" accept=".pdf,.jpg,.jpeg,.png" class="file-input">
+        </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div id="step3" class="form-section">
+        <div class="form-group">
+            <label id="labelBankName">اسم البنك (بالإنجليزية فقط) <span style="color:red;">*</span></label>
+            <input type="text" id="bankName" placeholder="e.g. Al Rajhi Bank">
+            <div class="error-msg" id="errorBankName"></div>
+        </div>
+        <div class="form-group">
+            <label id="labelIban">رقم الأيبان <span style="color:red;">*</span></label>
+            <input type="text" id="iban" placeholder="SA00 0000 0000 0000 0000">
+            <div class="error-msg" id="errorIban"></div>
+        </div>
+        <div class="form-group">
+            <label id="labelAccountHolder">الاسم الرباعي لصاحب الحساب <span style="color:red;">*</span></label>
+            <input type="text" id="accountHolderName" placeholder="محمد بن عبد الله الفلاني">
+            <div class="error-msg" id="errorAccountHolder"></div>
+        </div>
+    </div>
+
+    <div class="button-group">
+        <button class="btn btn-secondary" id="prevBtn" style="display:none;">← السابق</button>
+        <button class="btn btn-primary" id="nextBtn">التالي →</button>
+    </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+    // بيانات الأحياء (كامله)
+    const citiesData = {
+        "الرياض": ["الربيع", "الندى", "الصحافة", "النرجس", "العارض", "النفل", "العقيق", "الوادي", "الغدير", "الياسمين", "الفلاح", "بنبان", "القيروان", "حطين", "الملقا", "المروج", "المصيف", "التعاون", "الازدهار", "المغرزات", "الورود", "الرحمانية", "المحمدية", "النخيل", "المرسلات", "الواحة", "الملك فهد", "الملك عبدالله", "صلاح الدين", "العليا", "السليمانية", "المعذر الشمالي", "النزهة", "الروضة", "الرمال", "المونسية", "قرطبة", "الجنادرية", "القادسية", "اليرموك", "غرناطة", "أشبيلية", "الحمراء", "المعيزلية", "الخليج", "النهضة", "الروابي", "الريان", "القدس", "الجزيرة", "النظيم", "النسيم الشرقي", "النسيم الغربي", "الفيحاء", "السعادة", "الرماية", "الندوة", "الشهداء", "الملك فيصل", "المنار", "السلام", "الزهور", "السويدي", "السويدي الغربي", "ظهرة البديعة", "البديعة", "العريجاء", "العريجاء الغربية", "العريجاء الوسطى", "شبرا", "سلطانة", "الزهرة", "لبن", "طويق", "نمار", "السفارات", "الخزامى", "ظهرة لبن", "المهدية", "ديراب", "الدرعية الجديدة", "العزيزية", "الدار البيضاء", "الحزم", "بدر", "الشفا", "المروة", "المصانع", "المنصورية", "الفيصلية", "غبيراء", "منفوحة", "منفوحة الجديدة", "الحاير", "عتيقة", "الخالدية", "الدريهمية", "اليمامة", "الشعلان", "الفواز", "المشاعل", "إسكان الخرج", "السلي", "المناخ", "طيبة", "أحد", "النور", "الملز", "الفاخرية", "أم الحمام الشرقي", "أم الحمام الغربي", "المعذر", "المؤتمرات", "الضباط", "الوزارات", "الربوة", "جرير", "الصالحية", "الديرة", "الشميسي", "الوشام", "الفوطة", "عليشة", "الجرادية", "الناصرية", "دخنة", "البطحاء", "المرقب", "العودة", "سلام", "ثليم", "الصفا", "العمل"],
+        "جدة": ["البغدادية الشرقية", "البغدادية الغربية", "البلد", "العمارية", "الهنداوية", "الصحيفة", "الكندرة", "النزلة اليمانية", "النزلة الشرقية", "السبيل", "الثعالبة", "الشرفية", "الرويس", "الحمراء", "الأندلس", "الفيصلية", "الرحاب", "مشرفة", "العزيزية", "الربوة", "الصفا", "المروة", "النعيم", "الزهراء", "الروضة", "السلامة", "البوادي", "الخالدية", "الشاطئ", "النهضة", "النورس", "المحمدية", "البساتين", "أبحر الجنوبية", "أبحر الشمالية", "المرجان", "الياقوت", "الشراع", "الأمواج", "الفردوس", "الزمرد", "اللؤلؤ", "الرياض", "الأصالة", "طيبة", "النزهة", "السامر", "الأجواد", "المنار", "التوفيق", "السنابل", "الجامعة", "قويزة", "بريمان", "الحمدانية", "الفلاح", "الواحة", "الريان", "المنارات", "التيسير", "مدائن الفهد"],
+        "مكة": ["العزيزية", "الشرائع", "العوالي", "الزاهر", "النزهة", "الشوقية", "الكعكية", "ولي العهد", "بطحاء قريش", "العمرة", "التنعيم", "الحجون", "جرول", "المسفلة", "المعابدة", "الرصيفة", "الهجرة", "الخالدية", "الشامية", "أجياد", "الغزة", "البيبان", "الروابي", "النوارية", "البحيرات", "الحسينية", "أم الجود", "النسيم", "العتيبية", "ريع ذاخر", "جبل النور", "جبل ثور", "الزاهراء", "الحمراء", "السلامة", "العدل", "الروضة", "الجامعة", "الفيحاء", "العكيشية", "الراشدية", "النوارية الجديدة"],
+        "الدمام": ["الفيصلية", "الشاطئ", "الزهور", "الروضة", "أحد", "النور", "المزروعية", "العنود", "الضباب", "المحمدية", "البادية", "النسيم", "الجلوية", "الجوهرة", "الفيحاء", "البديع", "البديع الشمالي", "البديع الجنوبي", "الندى", "الفردوس", "الريان", "غرناطة", "الواحة", "طيبة", "المنار", "الإسكان", "الصناعية الأولى", "الصناعية الثانية", "الصناعية الثالثة"]
+    };
+
+    // الترجمة واللغة الحالية
+    const currentLang = localStorage.getItem('appLang') || 'ar';
+    const translations = {
+        ar: {
+            step1: "المعلومات الأساسية", step2: "المؤهلات والخبرات", step3: "الحساب البنكي",
+            freelance: "هل أنت فرد حر؟", freelance_yes: "نعم، أنا فرد حر", freelance_no: "لا، أنا تابع لمؤسسة",
+            nationality: "الجنسية", companyName: "اسم المؤسسة", crNumber: "رقم السجل التجاري", crFile: "إرفاق السجل التجاري",
+            idNumber: "رقم الهوية", nationalAddress: "إرفاق صورة من العنوان الوطني", city: "المدينة", neighborhood: "الحي",
+            mobile: "رقم الجوال", email: "البريد الإلكتروني", password: "كلمة المرور",
+            freelanceDoc: "ارفاق وثيقة العمل الحر (إن وجدت)",
+            education: "المؤهل الدراسي", certificate: "إرفاق الشهادة الدراسية", professionalCerts: "إضافة شهادات مهنية (اختياري)",
+            experience: "إضافة خبرات (اختياري)", bankName: "اسم البنك (بالإنجليزية فقط)", iban: "رقم الأيبان",
+            accountHolder: "الاسم الرباعي لصاحب الحساب", prev: "← السابق", next: "التالي →", submit: "متابعة",
+            required: "هذا الحقل مطلوب", invalidMobile: "يجب أن يبدأ بـ 05 ويتكون من 10 أرقام", invalidEmail: "بريد إلكتروني غير صالح",
+            invalidPassword: "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
+            invalidIban: "رقم أيبان غير صالح", invalidBankName: "يرجى إدخال اسم البنك بالإنجليزية", fileRequired: "يرجى رفع الملف",
+            saveSuccess: "تم حفظ بيانات الفني بنجاح", otherNationalityPlaceholder: "اكتب جنسيتك"
+        },
+        en: {
+            step1: "Basic Info", step2: "Qualifications", step3: "Bank Account",
+            freelance: "Are you a freelancer?", freelance_yes: "Yes, I am a freelancer", freelance_no: "No, I am affiliated with an entity",
+            nationality: "Nationality", companyName: "Company Name", crNumber: "Commercial Registration No.", crFile: "Upload Commercial Record",
+            idNumber: "ID Number", nationalAddress: "Upload National Address Image", city: "City", neighborhood: "Neighborhood",
+            mobile: "Mobile Number", email: "Email", password: "Password",
+            freelanceDoc: "Freelance Document (if any)",
+            education: "Education Level", certificate: "Upload Certificate", professionalCerts: "Professional Certifications (optional)",
+            experience: "Experience (optional)", bankName: "Bank Name (English only)", iban: "IBAN Number",
+            accountHolder: "Account Holder Full Name", prev: "← Previous", next: "Next →", submit: "Submit",
+            required: "This field is required", invalidMobile: "Must start with 05 and be 10 digits", invalidEmail: "Invalid email address",
+            invalidPassword: "Password must be at least 8 characters",
+            invalidIban: "Invalid IBAN", invalidBankName: "Please enter bank name in English", fileRequired: "Please upload the file",
+            saveSuccess: "Technician data saved successfully", otherNationalityPlaceholder: "Enter your nationality"
+        },
+        ur: {
+            step1: "بنیادی معلومات", step2: "تعلیم اور تجربہ", step3: "بینک اکاؤنٹ",
+            freelance: "کیا آپ آزاد پیشہ ہیں؟", freelance_yes: "ہاں، میں آزاد پیشہ ہوں", freelance_no: "نہیں، میں کسی ادارے سے منسلک ہوں",
+            nationality: "قومیت", companyName: "ادارے کا نام", crNumber: "تجارتی رجسٹریشن نمبر", crFile: "تجارتی ریکارڈ اپ لوڈ کریں",
+            idNumber: "شناختی نمبر", nationalAddress: "قومی پتے کی تصویر اپ لوڈ کریں", city: "شہر", neighborhood: "محلہ",
+            mobile: "فون نمبر", email: "ای میل", password: "پاس ورڈ",
+            freelanceDoc: "آزاد پیشہ دستاویز (اگر موجود ہو)",
+            education: "تعلیمی قابلیت", certificate: "سرٹیفکیٹ اپ لوڈ کریں", professionalCerts: "پیشہ ورانہ سرٹیفکیٹ (اختیاری)",
+            experience: "تجربہ (اختیاری)", bankName: "بینک کا نام (صرف انگریزی میں)", iban: "آئی بان نمبر",
+            accountHolder: "اکاؤنٹ ہولڈر کا پورا نام", prev: "← پچھلا", next: "اگلا →", submit: "جاری رکھیں",
+            required: "یہ فیلڈ ضروری ہے", invalidMobile: "فون نمبر 05 سے شروع ہو کر 10 ہندسوں پر مشتمل ہو", invalidEmail: "غلط ای میل پتہ",
+            invalidPassword: "پاس ورڈ کم از کم 8 حروف پر مشتمل ہو",
+            invalidIban: "غلط آئی بان", invalidBankName: "براہ کرم بینک کا نام انگریزی میں درج کریں", fileRequired: "براہ کرم فائل اپ لوڈ کریں",
+            saveSuccess: "ٹیکنیشن کا ڈیٹا کامیابی سے محفوظ ہوگیا", otherNationalityPlaceholder: "اپنی قومیت لکھیں"
+        }
+    };
+    function t(key) { return translations[currentLang]?.[key] || translations['ar'][key]; }
+
+    // تطبيق الترجمة
+    function applyTranslations() {
+        document.getElementById('step1Label').innerText = t('step1');
+        document.getElementById('step2Label').innerText = t('step2');
+        document.getElementById('step3Label').innerText = t('step3');
+        document.getElementById('labelFreelance').innerHTML = t('freelance') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelNationality').innerHTML = t('nationality') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelCompanyName').innerHTML = t('companyName') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelCRNumber').innerHTML = t('crNumber') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelCRFile').innerHTML = t('crFile') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelIdNumber').innerHTML = t('idNumber') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelNationalAddress').innerHTML = t('nationalAddress') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelCity').innerHTML = t('city') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelNeighborhood').innerHTML = t('neighborhood') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelMobile').innerHTML = t('mobile') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelEmail').innerHTML = t('email') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelPassword').innerHTML = t('password') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelFreelanceDoc').innerText = t('freelanceDoc');
+        document.getElementById('labelEducation').innerHTML = t('education') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelCertificate').innerHTML = t('certificate') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelProfessionalCerts').innerText = t('professionalCerts');
+        document.getElementById('labelExperience').innerText = t('experience');
+        document.getElementById('labelBankName').innerHTML = t('bankName') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelIban').innerHTML = t('iban') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelAccountHolder').innerHTML = t('accountHolder') + ' <span style="color:red;">*</span>';
+        document.getElementById('prevBtn').innerHTML = t('prev');
+        const nextBtn = document.getElementById('nextBtn');
+        if (nextBtn) nextBtn.innerHTML = (currentStep === 3) ? t('submit') : t('next');
+        const freelanceSelect = document.getElementById('isFreelance');
+        if (freelanceSelect.options[1]) freelanceSelect.options[1].text = t('freelance_yes');
+        if (freelanceSelect.options[2]) freelanceSelect.options[2].text = t('freelance_no');
+        const educationSelect = document.getElementById('education');
+        if (educationSelect.options[1]) educationSelect.options[1].text = currentLang === 'ar' ? 'ثانوي' : (currentLang === 'en' ? 'High School' : 'ثانوی');
+        if (educationSelect.options[2]) educationSelect.options[2].text = currentLang === 'ar' ? 'بكالوريوس' : (currentLang === 'en' ? 'Bachelor' : 'بیچلر');
+        if (educationSelect.options[3]) educationSelect.options[3].text = currentLang === 'ar' ? 'دراسات عليا' : (currentLang === 'en' ? 'Postgraduate' : 'پوسٹ گریجویٹ');
+        document.getElementById('otherNationality').placeholder = t('otherNationalityPlaceholder');
+    }
+
+    // الوضع التجريبي
+    let demoMode = false;
+    const demoCheckbox = document.getElementById('demoModeCheckbox');
+    function showToastMsg(msg, isError = false) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.backgroundColor = isError ? '#ef4444' : '#22c55e';
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 3000);
+    }
+    if (demoCheckbox) {
+        demoCheckbox.addEventListener('change', (e) => {
+            demoMode = e.target.checked;
+            showToastMsg(demoMode ? "✅ وضع تجريبي: يمكنك إكمال التسجيل دون تعبئة الحقول" : "الوضع العادي: جميع الحقول مطلوبة");
+        });
+    }
+
+    // تحديث الـ Stepper
+    function updateStepper() {
+        for (let i = 1; i <= 3; i++) {
+            const circle = document.getElementById(`step${i}Circle`);
+            const wrapper = document.getElementById(`stepWrapper${i}`);
+            if (i < currentStep) {
+                circle.classList.add('done');
+                circle.classList.remove('active');
+                wrapper.classList.add('completed');
+            } else if (i === currentStep) {
+                circle.classList.add('active');
+                circle.classList.remove('done');
+                wrapper.classList.remove('completed');
+            } else {
+                circle.classList.remove('active', 'done');
+                wrapper.classList.remove('completed');
+            }
+        }
+        const nextBtn = document.getElementById('nextBtn');
+        if (nextBtn) nextBtn.innerHTML = (currentStep === 3) ? t('submit') : t('next');
+        const prevBtn = document.getElementById('prevBtn');
+        if (prevBtn) prevBtn.style.display = (currentStep === 1) ? 'none' : 'inline-block';
+    }
+
+    let currentStep = 1;
+    function showStep(step) {
+        document.querySelectorAll('.form-section').forEach(section => section.classList.remove('active-section'));
+        document.getElementById(`step${step}`).classList.add('active-section');
+        currentStep = step;
+        updateStepper();
+    }
+
+    function toggleOtherNationality() {
+        const nationalitySelect = document.getElementById('nationality');
+        const otherDiv = document.getElementById('otherNationalityDiv');
+        if (otherDiv) otherDiv.style.display = (nationalitySelect.value === 'other') ? 'block' : 'none';
+    }
+    function toggleConditionalFields() {
+        const nationality = document.getElementById('nationality').value;
+        const isFreelance = document.getElementById('isFreelance').value;
+        const isSaudi = (nationality === 'saudi');
+        const showCompany = (!isSaudi) || (isSaudi && isFreelance === 'no');
+        const companyFields = document.getElementById('companyFields');
+        if (companyFields) companyFields.style.display = showCompany ? 'block' : 'none';
+        const freelanceDocGroup = document.getElementById('freelanceDocGroup');
+        if (freelanceDocGroup) freelanceDocGroup.style.display = (isSaudi && isFreelance === 'yes') ? 'block' : 'none';
+    }
+
+    function showError(id, msg) { const el = document.getElementById(id); if(el) { el.innerText = msg; el.style.display = 'block'; } }
+    function hideError(id) { const el = document.getElementById(id); if(el) el.style.display = 'none'; }
+
+    function validateStep(step) {
+        if (demoMode) return true;
+        let valid = true;
+        if (step === 1) {
+            const freelance = document.getElementById('isFreelance').value;
+            const nationality = document.getElementById('nationality').value;
+            const otherNat = document.getElementById('otherNationality').value.trim();
+            const idNumber = document.getElementById('idNumber').value.trim();
+            const nationalAddressFile = document.getElementById('nationalAddress').files[0];
+            const city = document.getElementById('city').value;
+            const neighborhood = document.getElementById('neighborhood').value;
+            const mobile = document.getElementById('mobile').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const isSaudi = (nationality === 'saudi');
+            const showCompany = (!isSaudi) || (isSaudi && freelance === 'no');
+            if (!freelance) { showError('errorFreelance', t('required')); valid = false; } else hideError('errorFreelance');
+            if (!nationality) { showError('errorNationality', t('required')); valid = false; } else hideError('errorNationality');
+            if (nationality === 'other' && !otherNat) { showError('errorOtherNationality', t('required')); valid = false; } else hideError('errorOtherNationality');
+            if (showCompany) {
+                const companyName = document.getElementById('companyName').value.trim();
+                const crNumber = document.getElementById('crNumber').value.trim();
+                const crFile = document.getElementById('crFile').files[0];
+                if (!companyName) { showError('errorCompanyName', t('required')); valid = false; } else hideError('errorCompanyName');
+                if (!crNumber) { showError('errorCRNumber', t('required')); valid = false; } else hideError('errorCRNumber');
+                if (!crFile) { showError('errorCrFile', t('fileRequired')); valid = false; } else hideError('errorCrFile');
+            }
+            if (!idNumber) { showError('errorIdNumber', t('required')); valid = false; } else hideError('errorIdNumber');
+            if (!nationalAddressFile) { showError('errorNationalAddress', t('fileRequired')); valid = false; } else hideError('errorNationalAddress');
+            if (!city) { showError('errorCity', t('required')); valid = false; } else hideError('errorCity');
+            if (!neighborhood) { showError('errorNeighborhood', t('required')); valid = false; } else hideError('errorNeighborhood');
+            if (!mobile.match(/^05\d{8}$/)) { showError('errorMobile', t('invalidMobile')); valid = false; } else hideError('errorMobile');
+            if (!email.match(/^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/)) { showError('errorEmail', t('invalidEmail')); valid = false; } else hideError('errorEmail');
+            if (!password) { showError('errorPassword', t('required')); valid = false; } else if (password.length < 8) { showError('errorPassword', t('invalidPassword')); valid = false; } else hideError('errorPassword');
+        } else if (step === 2) {
+            const education = document.getElementById('education').value;
+            const certificateFile = document.getElementById('certificate').files[0];
+            if (!education) { showError('errorEducation', t('required')); valid = false; } else hideError('errorEducation');
+            if (!certificateFile) { showError('errorCertificate', t('fileRequired')); valid = false; } else hideError('errorCertificate');
+        } else if (step === 3) {
+            const bankName = document.getElementById('bankName').value.trim();
+            const iban = document.getElementById('iban').value.trim();
+            const accountHolder = document.getElementById('accountHolderName').value.trim();
+            if (!bankName.match(/^[A-Za-z\s]+$/)) { showError('errorBankName', t('invalidBankName')); valid = false; } else hideError('errorBankName');
+            if (!iban || iban.length < 15) { showError('errorIban', t('invalidIban')); valid = false; } else hideError('errorIban');
+            if (!accountHolder) { showError('errorAccountHolder', t('required')); valid = false; } else hideError('errorAccountHolder');
+        }
+        return valid;
+    }
+
+    async function collectFileAsBase64(file) {
+        return new Promise((resolve) => {
+            if (!file) { resolve(null); return; }
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function saveToFirebase(formData, filesBase64) {
+    try {
+        const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+        const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+        const { getFirestore, doc, setDoc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrTaYLYWW9H31_O6fWL_36BKB4Oim0ksM",
+            authDomain: "techcare-80c7b.firebaseapp.com",
+            projectId: "techcare-80c7b",
+            storageBucket: "techcare-80c7b.firebasestorage.app",
+            messagingSenderId: "94772613240",
+            appId: "1:94772613240:web:3d0ae9c03561e7c6bb1d8d",
+            measurementId: "G-59VFXVH57V"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        let uid;
+        let isNewUser = false;
+        
+        // محاولة تسجيل الدخول أولاً (إذا كان المستخدم موجوداً)
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+            uid = userCredential.user.uid;
+            isNewUser = false;
+        } catch (signInError) {
+            // إذا لم يكن موجوداً، نقوم بإنشاء حساب جديد
+            if (signInError.code === 'auth/user-not-found') {
+                const newUser = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+                uid = newUser.user.uid;
+                isNewUser = true;
+            } else {
+                throw signInError;
+            }
+        }
+        
+        // التحقق من وجود بيانات الفني في Firestore
+        const techDoc = await getDoc(doc(db, 'technicians', uid));
+        
+        if (techDoc.exists()) {
+            showToastMsg('هذا المستخدم مسجل بالفعل كفني', true);
+            return false;
+        }
+        
+        // حفظ بيانات الفني (حتى لو كان المستخدم موجوداً مسبقاً)
+        const technicianData = {
+            fullName: formData.fullName || "",
+            mobile: formData.mobile,
+            email: formData.email,
+            isFreelance: formData.isFreelance,
+            nationality: formData.nationality,
+            companyName: formData.companyName || "",
+            crNumber: formData.crNumber || "",
+            crFileBase64: filesBase64.crFile,
+            idNumber: formData.idNumber,
+            nationalAddressBase64: filesBase64.nationalAddress,
+            city: formData.city,
+            neighborhood: formData.neighborhood,
+            freelanceDocBase64: filesBase64.freelanceDoc,
+            education: formData.education,
+            certificateBase64: filesBase64.certificate,
+            professionalCertBase64: filesBase64.professionalCert,
+            experienceBase64: filesBase64.experience,
+            bankName: formData.bankName,
+            iban: formData.iban,
+            accountHolderName: formData.accountHolderName,
+            role: 'technician',
+            createdAt: new Date().toISOString()
+        };
+        
+        await setDoc(doc(db, 'technicians', uid), technicianData);
+        
+        // تحديث المستخدم الحالي
+        saveCurrentUser({ ...technicianData, uid, role: 'technician' });
+        
+        if (isNewUser) {
+            showToastMsg('تم إنشاء حساب فني جديد بنجاح ✅');
+        } else {
+            showToastMsg('تم إضافة دور فني لحسابك الحالي بنجاح ✅');
+        }
+        
+        return true;
+    } catch (error) {
+        console.error(error);
+        showToastMsg('خطأ في التسجيل: ' + error.message, true);
+        return false;
+    }
+}
+
+    async function saveAllData() {
+        if (demoMode) {
+            const demoTechnician = {
+                role: 'technician',
+                fullName: "فني تجريبي",
+                mobile: "0512345678",
+                email: "demo@technician.com",
+                isFreelance: "yes",
+                nationality: "saudi",
+                city: "الرياض",
+                neighborhood: "الملقا",
+                education: "بكالوريوس",
+                bankName: "Demo Bank",
+                iban: "SA0000000000000000",
+                accountHolderName: "مستخدم تجريبي",
+                demo: true,
+                createdAt: new Date().toISOString()
+            };
+            let technicians = JSON.parse(localStorage.getItem('technicians')) || [];
+            technicians.push(demoTechnician);
+            localStorage.setItem('technicians', JSON.stringify(technicians));
+            localStorage.setItem('currentUser', JSON.stringify({ mobile: demoTechnician.mobile, role: 'technician', fullName: demoTechnician.fullName }));
+            showToastMsg("✅ تم حفظ بيانات تجريبية بنجاح (وضع تجريبي)");
+            window.location.href = "technician-dashboard.html";
+            return;
+        }
+        
+        // جمع البيانات من النموذج
+        let nationalityValue = document.getElementById('nationality').value;
+        if (nationalityValue === 'other') nationalityValue = document.getElementById('otherNationality').value.trim();
+        
+        const formData = {
+            fullName: "",
+            mobile: document.getElementById('mobile').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            password: document.getElementById('password').value,
+            isFreelance: document.getElementById('isFreelance').value,
+            nationality: nationalityValue,
+            companyName: document.getElementById('companyName').value.trim(),
+            crNumber: document.getElementById('crNumber').value.trim(),
+            idNumber: document.getElementById('idNumber').value.trim(),
+            city: document.getElementById('city').value,
+            neighborhood: document.getElementById('neighborhood').value,
+            education: document.getElementById('education').value,
+            bankName: document.getElementById('bankName').value.trim(),
+            iban: document.getElementById('iban').value.trim(),
+            accountHolderName: document.getElementById('accountHolderName').value.trim()
+        };
+        
+        // جمع الملفات
+        const filesBase64 = {
+            crFile: await collectFileAsBase64(document.getElementById('crFile').files[0]),
+            nationalAddress: await collectFileAsBase64(document.getElementById('nationalAddress').files[0]),
+            freelanceDoc: await collectFileAsBase64(document.getElementById('freelanceDoc').files[0]),
+            certificate: await collectFileAsBase64(document.getElementById('certificate').files[0]),
+            professionalCert: await collectFileAsBase64(document.getElementById('professionalCertFile').files[0]),
+            experience: await collectFileAsBase64(document.getElementById('experienceFile').files[0])
+        };
+        
+        const success = await saveToFirebase(formData, filesBase64);
+        
+        if (success) {
+            showToastMsg("تم تسجيل الفني بنجاح ✅");
+            setTimeout(() => {
+                window.location.href = "technician-dashboard.html";
+            }, 1500);
+        }
+    }
+
+    // أحداث الأزرار
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', async () => {
+            if (validateStep(currentStep)) {
+                if (currentStep === 3) await saveAllData();
+                else showStep(currentStep + 1);
+            }
+        });
+    }
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => { if (currentStep > 1) showStep(currentStep - 1); });
+    }
+    const freelanceSelect = document.getElementById('isFreelance');
+    const nationalitySelect = document.getElementById('nationality');
+    const citySelect = document.getElementById('city');
+    if (freelanceSelect) freelanceSelect.addEventListener('change', toggleConditionalFields);
+    if (nationalitySelect) {
+        nationalitySelect.addEventListener('change', () => { toggleOtherNationality(); toggleConditionalFields(); });
+    }
+    if (citySelect) {
+        citySelect.addEventListener('change', function() {
+            const city = this.value;
+            const neighborhoodSelect = document.getElementById('neighborhood');
+            neighborhoodSelect.innerHTML = '<option value="">-- اختر --</option>';
+            if (city && citiesData[city]) {
+                citiesData[city].forEach(hood => {
+                    const option = document.createElement('option');
+                    option.value = hood;
+                    option.textContent = hood;
+                    neighborhoodSelect.appendChild(option);
+                });
+            }
+        });
+    }
+
+    window.addEventListener('load', () => {
+        applyTranslations();
+        toggleOtherNationality();
+        toggleConditionalFields();
+        showStep(1);
+        updateStepper();
+    });
+</script>
+</body>
+</html>

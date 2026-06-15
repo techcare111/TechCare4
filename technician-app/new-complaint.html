@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>شكوى جديدة - TechCare</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="../common/storage.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #f8fafc;
+            direction: rtl;
+            padding: 20px;
+        }
+        .demo-toggle {
+            background: #f1f5f9;
+            padding: 8px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        h1 { font-size: 26px; color: #065f46; margin-bottom: 8px; }
+        .sub { color: #475569; margin-bottom: 24px; font-size: 14px; }
+        .form-group { margin-bottom: 20px; }
+        label { font-weight: 600; display: block; margin-bottom: 6px; color: #0f172a; }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 16px;
+            font-family: inherit;
+            background: white;
+        }
+        input:focus, select:focus, textarea:focus { border-color: #10b981; outline: none; }
+        .error-msg { color: #ef4444; font-size: 12px; margin-top: 4px; display: none; }
+        .button-group { display: flex; gap: 16px; margin-top: 24px; }
+        .btn {
+            flex: 1; padding: 14px; border-radius: 40px; font-weight: bold; border: none; cursor: pointer;
+        }
+        .btn-primary { background: #10b981; color: white; }
+        .btn-primary:hover { background: #059669; }
+        .btn-secondary { background: #e2e8f0; color: #1e293b; }
+        .toast {
+            position: fixed; bottom: 30px; left: 20px; right: 20px; background: #22c55e;
+            color: white; padding: 12px; border-radius: 60px; text-align: center; display: none; z-index: 1000;
+        }
+        .preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .preview img, .preview video { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="demo-toggle">
+        <input type="checkbox" id="demoModeCheckbox"> <label for="demoModeCheckbox">🧪 وضع تجريبي (تجاوز الحقول الإجبارية)</label>
+    </div>
+    <div class="container">
+        <h1><i class="fas fa-plus-circle"></i> شكوى جديدة</h1>
+        <div class="sub">يرجى إدخال تفاصيل الشكوى</div>
+
+        <div class="form-group">
+            <label>رقم الطلب <span style="color:red;">*</span></label>
+            <input type="text" id="requestNumber" placeholder="مثال: 1 أو 5" maxlength="10">
+            <div class="error-msg" id="errorRequestNumber"></div>
+        </div>
+
+        <div class="form-group">
+            <label>نوع الشكوى <span style="color:red;">*</span></label>
+            <select id="complaintType">
+                <option value="">-- اختر نوع الشكوى --</option>
+                <option value="فني غير متخصص / خدمة غير مرضية">فني غير متخصص / خدمة غير مرضية</option>
+                <option value="سوء التعامل / عدم احترام">سوء التعامل / عدم احترام</option>
+                <option value="وصول فني متأخر أو عدم الالتزام بالموعد">وصول فني متأخر أو عدم الالتزام بالموعد</option>
+                <option value="تلف في الجهاز أثناء الصيانة">تلف في الجهاز أثناء الصيانة</option>
+                <option value="أخرى">أخرى</option>
+            </select>
+            <div class="error-msg" id="errorComplaintType"></div>
+        </div>
+
+        <div class="form-group">
+            <label>وصف الشكوى <span style="color:red;">*</span></label>
+            <textarea id="description" rows="5" placeholder="اكتب تفاصيل الشكوى هنا..."></textarea>
+            <div class="error-msg" id="errorDesc"></div>
+        </div>
+
+        <div class="form-group">
+            <label>رفع مرفقات (صور/فيديو - اختياري)</label>
+            <input type="file" id="attachments" accept="image/*,video/*" multiple>
+            <div id="preview" class="preview"></div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-secondary" id="cancelBtn">إلغاء</button>
+            <button class="btn btn-primary" id="submitBtn">إرسال الشكوى</button>
+        </div>
+    </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+    const currentUser = getCurrentUser();
+    if (!currentUser) window.location.href = "login.html";
+
+    let demoMode = false;
+    const demoCheckbox = document.getElementById('demoModeCheckbox');
+    if (demoCheckbox) {
+        demoCheckbox.addEventListener('change', (e) => {
+            demoMode = e.target.checked;
+            showToast(demoMode ? "✅ وضع تجريبي: يمكنك إرسال الشكوى دون تعبئة" : "الوضع العادي: جميع الحقول مطلوبة");
+        });
+    }
+
+    let selectedFiles = [];
+    document.getElementById('attachments').addEventListener('change', function(e) {
+        selectedFiles = Array.from(e.target.files);
+        const preview = document.getElementById('preview');
+        preview.innerHTML = '';
+        selectedFiles.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = ev.target.result;
+                    preview.appendChild(img);
+                } else if (file.type.startsWith('video/')) {
+                    const video = document.createElement('video');
+                    video.src = ev.target.result;
+                    video.controls = true;
+                    preview.appendChild(video);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+    function showToast(msg, isError = false) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.backgroundColor = isError ? '#ef4444' : '#22c55e';
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 3000);
+    }
+
+    function showError(id, msg) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerText = msg;
+            el.style.display = 'block';
+        }
+    }
+    function hideError(id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    }
+
+    async function saveComplaintWithAttachments() {
+        if (demoMode) {
+            const demoComplaint = {
+                customerMobile: currentUser.mobile,
+                customerName: currentUser.fullName,
+                requestNumber: 0,
+                type: "تجريبي",
+                description: "شكوى تجريبية (لن تتم معالجتها)",
+                attachments: [],
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+            saveComplaint(demoComplaint);
+            showToast("✅ تم إرسال شكوى تجريبية (لن يتم مراجعتها)");
+            setTimeout(() => window.location.href = "complaints.html", 1500);
+            return;
+        }
+
+        const requestNumber = document.getElementById('requestNumber').value.trim();
+        const complaintType = document.getElementById('complaintType').value;
+        const description = document.getElementById('description').value.trim();
+
+        let valid = true;
+        if (!requestNumber) { showError('errorRequestNumber', 'يرجى إدخال رقم الطلب'); valid = false; } else hideError('errorRequestNumber');
+        if (!complaintType) { showError('errorComplaintType', 'يرجى اختيار نوع الشكوى'); valid = false; } else hideError('errorComplaintType');
+        if (!description) { showError('errorDesc', 'يرجى كتابة وصف الشكوى'); valid = false; } else hideError('errorDesc');
+
+        if (!valid) return;
+
+        let attachmentsBase64 = [];
+        for (let file of selectedFiles) {
+            const base64 = await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+            });
+            attachmentsBase64.push(base64);
+        }
+
+        const complaint = {
+            id: Date.now(),
+            customerMobile: currentUser.mobile,
+            customerName: currentUser.fullName,
+            requestNumber: parseInt(requestNumber),
+            type: complaintType,
+            description: description,
+            attachments: attachmentsBase64,
+            status: 'pending',
+            createdAt: new Date().toISOString()
+        };
+        saveComplaint(complaint);
+        showToast("✅ تم رفع شكواك بنجاح. سيتم مراجعتها قريباً.");
+        setTimeout(() => window.location.href = "complaints.html", 2000);
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', saveComplaintWithAttachments);
+    document.getElementById('cancelBtn').addEventListener('click', () => window.location.href = "complaints.html");
+</script>
+</body>
+</html>

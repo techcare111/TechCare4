@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>اختبار Firebase</title>
+</head>
+<body>
+    <h1>اختبار Firebase</h1>
+    <button id="testBtn">اختبر Firebase</button>
+    <div id="result"></div>
+
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        document.getElementById('testBtn').onclick = async () => {
+            document.getElementById('result').innerHTML = 'جاري الاتصال...';
+            try {
+                const testDoc = await getDoc(doc(db, 'customers', 'test'));
+                document.getElementById('result').innerHTML = '✅ Firebase يعمل بنجاح!';
+                document.getElementById('result').style.color = 'green';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '❌ خطأ: ' + error.message;
+                document.getElementById('result').style.color = 'red';
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>الرئيسية - TechCare</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../common/storage.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #f8fafc;
+            direction: rtl;
+            padding-bottom: 70px;
+        }
+        .app-bar {
+            background: #1e40af;
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .app-bar .menu-icon, .app-bar .store-icon { font-size: 24px; cursor: pointer; background: none; border: none; color: white; }
+        .app-bar .app-name { font-size: 22px; font-weight: bold; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .new-request-btn {
+            background: #3b82f6; color: white; border: none; padding: 14px; border-radius: 60px;
+            font-size: 18px; font-weight: bold; width: 100%; margin: 20px 0; cursor: pointer;
+        }
+        .active-order-box {
+            background: #fef9c3; padding: 12px; border-radius: 20px; margin: 15px 0; border-right: 5px solid #eab308;
+        }
+        .section-title { font-size: 20px; font-weight: 700; margin: 25px 0 12px; display: flex; justify-content: space-between; }
+        .categories { display: flex; gap: 12px; overflow-x: auto; }
+        .cat-card { background: white; border-radius: 28px; padding: 12px 20px; text-align: center; min-width: 90px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .cat-card i { font-size: 28px; display: block; margin-bottom: 8px; color: #3b82f6; }
+        .order-card { background: white; border-radius: 20px; padding: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+        .map-container { border-radius: 24px; overflow: hidden; margin: 16px 0; border: 1px solid #e2e8f0; position: relative; z-index: 1; }
+        #map { height: 400px; width: 100%; z-index: 1; }
+        .technician-list {
+            background: white;
+            border-radius: 24px;
+            padding: 12px;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .tech-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+        }
+        .tech-item:last-child { border: none; }
+        .tech-avatar { width: 45px; height: 45px; background: #eef2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #1e40af; }
+        .tech-info { flex: 1; }
+        .tech-name { font-weight: bold; }
+        .tech-rating { color: #f59e0b; font-size: 12px; }
+        .tech-distance { font-size: 12px; color: #64748b; }
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 10px 16px; border-top: 1px solid #e2e8f0; z-index: 90;
+        }
+        .nav-item { text-align: center; color: #64748b; cursor: pointer; }
+        .nav-item.active { color: #3b82f6; }
+        .support-ai {
+            position: fixed; bottom: 80px; left: 16px; background: #1e40af; color: white; width: 55px; height: 55px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer;
+            z-index: 90; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        /* القائمة الجانبية - إصلاح كامل */
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 280px;
+            height: 100%;
+            background: white;
+            transition: right 0.3s ease;
+            z-index: 1000;
+            padding: 70px 20px 20px;
+            box-shadow: -2px 0 12px rgba(0,0,0,0.15);
+            overflow-y: auto;
+        }
+        .drawer.open {
+            right: 0;
+        }
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0.3s;
+            z-index: 900;
+        }
+        .drawer-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .drawer a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #1e293b;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .toast {
+            position: fixed; bottom: 30px; left: 20px; right: 20px; background: #22c55e; color: white; padding: 12px;
+            border-radius: 60px; text-align: center; z-index: 1100; display: none;
+        }
+        .tech-marker-small, .tech-marker-card {
+            background: transparent;
+            border: none;
+        }
+        /* ضمان عدم تداخل الخريطة مع القائمة */
+        .leaflet-container {
+            z-index: 1 !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-bar">
+    <button class="menu-icon" id="menuBtn"><i class="fas fa-bars"></i></button>
+    <div class="app-name">TechCare</div>
+    <button class="store-icon" id="storeBtn"><i class="fas fa-store"></i></button>
+</div>
+
+<div class="drawer" id="drawer">
+    <div id="drawerWelcome" style="font-weight:bold; margin-bottom:20px;">أهلاً...</div>
+    <a href="customer-profile.html"><i class="fas fa-user"></i> الملف الشخصي</a>
+    <a href="#" id="newServiceDrawer"><i class="fas fa-plus-circle"></i> طلب خدمة جديدة →</a>
+    <a href="my-orders.html"><i class="fas fa-list"></i> طلباتي</a>
+    <a href="favorites.html"><i class="fas fa-heart"></i> قائمة المفضلة</a>
+    <a href="notifications.html"><i class="fas fa-bell"></i> الإشعارات</a>
+    <a href="chat.html"><i class="fas fa-comments"></i> المحادثات</a>
+    <a href="complaints.html"><i class="fas fa-gavel"></i> حل المشكلات والنزاعات</a>
+    <a href="#"><i class="fas fa-phone-alt"></i> اتصل بنا</a>
+    <a href="#"><i class="fas fa-file-contract"></i> سياسات الموقع</a>
+    <a href="../common/language.html?return=../Customer-App/customer-dashboard.html"><i class="fas fa-language"></i> تغيير اللغة</a>
+</div>
+<div class="drawer-overlay" id="drawerOverlay"></div>
+
+<div class="container">
+    <button class="new-request-btn" id="newRequestMain"><i class="fas fa-tools"></i> طلب خدمة جديدة</button>
+
+    <div class="active-order-box" id="activeOrderBox" style="display: none;">
+        ⏳ طلب قيد التنفيذ: <span id="activeOrderText"></span><br>
+        الفني: <span id="technicianNameLink" style="color:#1e40af; font-weight:bold; cursor:pointer;"></span>
+    </div>
+
+    <div class="section-title">الخدمات الأكثر طلباً</div>
+    <div class="categories">
+        <div class="cat-card"><i class="fas fa-mobile-alt"></i> جوالات</div>
+        <div class="cat-card"><i class="fas fa-snowplow"></i> مكيفات</div>
+        <div class="cat-card"><i class="fas fa-laptop"></i> كمبيوترات</div>
+        <div class="cat-card"><i class="fas fa-camera"></i> كاميرات</div>
+        <div class="cat-card"><i class="fas fa-tv"></i> أجهزة منزلية</div>
+    </div>
+
+    <div class="section-title">📍 فنيين بالقرب منك</div>
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
+    <div id="technicianListContainer" class="technician-list">
+        <div style="text-align:center; padding:20px;">جاري تحميل الفنيين...</div>
+    </div>
+
+    <div class="section-title">طلباتي الأخيرة</div>
+    <div id="recentOrdersList"></div>
+</div>
+
+<div class="bottom-nav">
+    <div class="nav-item active" data-nav="home"><i class="fas fa-home"></i><div>الرئيسية</div></div>
+    <div class="nav-item" data-nav="favorites"><i class="fas fa-heart"></i><div>المفضلة</div></div>
+    <div class="nav-item" data-nav="orders"><i class="fas fa-clipboard-list"></i><div>طلباتي</div></div>
+    <div class="nav-item" data-nav="notifications"><i class="fas fa-bell"></i><div>الإشعارات</div></div>
+    <div class="nav-item" data-nav="chat"><i class="fas fa-comment-dots"></i><div>الشات</div></div>
+</div>
+
+<div class="support-ai" id="supportAiBtn"><i class="fas fa-robot"></i></div>
+
+<script>
+    let currentUser = getCurrentUser();
+    if (!currentUser) window.location.href = "login.html";
+    document.getElementById('drawerWelcome').innerText = `أهلاً... ${currentUser.fullName}`;
+
+    let map, customerMarker, technicianMarkers = [];
+    let customerLatLng = null;
+
+    function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return (R * c).toFixed(1);
+    }
+
+    function generateMockTechnicians() {
+        let existing = getTechnicians();
+        if (existing.length === 0) {
+            const mockTechs = [
+                { mobile: "0511111111", fullName: "أحمد السعيد", rating: 4.8, isActive: true, lastLocation: { lat: 24.7336, lng: 46.6653 }, lastActiveTime: new Date().toISOString() },
+                { mobile: "0522222222", fullName: "ناصر القحطاني", rating: 4.5, isActive: true, lastLocation: { lat: 24.7036, lng: 46.6853 }, lastActiveTime: new Date().toISOString() },
+                { mobile: "0533333333", fullName: "خالد الشمري", rating: 4.2, isActive: true, lastLocation: { lat: 24.7236, lng: 46.6553 }, lastActiveTime: new Date().toISOString() }
+            ];
+            localStorage.setItem('technicians', JSON.stringify(mockTechs));
+            console.log("تم إضافة فنيين وهميين للتجربة");
+        }
+    }
+
+    function initMap() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                customerLatLng = { lat: position.coords.latitude, lng: position.coords.longitude };
+                updateCustomerLocation(currentUser.mobile, customerLatLng.lat, customerLatLng.lng);
+                map = L.map('map').setView([customerLatLng.lat, customerLatLng.lng], 13);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+                }).addTo(map);
+                customerMarker = L.marker([customerLatLng.lat, customerLatLng.lng], {
+                    icon: L.divIcon({ html: '<i class="fas fa-user-circle" style="font-size:32px; color:#1e40af;"></i>', iconSize: [32,32] })
+                }).addTo(map).bindPopup("موقعك الحالي");
+                loadNearbyTechnicians();
+            }, error => {
+                console.warn("خطأ تحديد الموقع، استخدام موقع افتراضي");
+                customerLatLng = { lat: 24.7136, lng: 46.6753 };
+                map = L.map('map').setView([customerLatLng.lat, customerLatLng.lng], 12);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+                loadNearbyTechnicians();
+            });
+        } else {
+            customerLatLng = { lat: 24.7136, lng: 46.6753 };
+            map = L.map('map').setView([customerLatLng.lat, customerLatLng.lng], 12);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+            loadNearbyTechnicians();
+        }
+    }
+
+    function getIconForTech(tech, zoomLevel) {
+        let rating = tech.rating || 4.0;
+        let stars = '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
+        let distanceText = tech.distance ? `${tech.distance} كم` : '';
+        if (zoomLevel < 14) {
+            return L.divIcon({
+                html: `<div style="background:#3b82f6; color:white; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 2px 6px rgba(0,0,0,0.3);">
+                        <i class="fas fa-wrench"></i>
+                       </div>`,
+                iconSize: [32, 32],
+                className: 'tech-marker-small'
+            });
+        } else {
+            return L.divIcon({
+                html: `<div style="background:white; border-radius:20px; padding:6px 12px; box-shadow:0 4px 12px rgba(0,0,0,0.2); border:1px solid #e2e8f0; text-align:center; min-width:130px;">
+                            <div style="font-weight:bold; font-size:14px;">${tech.fullName || tech.companyName}</div>
+                            <div style="color:#f59e0b; font-size:12px;">${stars} ${rating}</div>
+                            <div style="color:#64748b; font-size:11px;">📏 ${distanceText}</div>
+                        </div>`,
+                iconSize: [140, 70],
+                className: 'tech-marker-card'
+            });
+        }
+    }
+
+    function loadNearbyTechnicians() {
+        if (!customerLatLng) return;
+        let techs = getActiveTechnicians();
+        if (techs.length === 0) {
+            generateMockTechnicians();
+            techs = getActiveTechnicians();
+        }
+        if (techs.length === 0) {
+            document.getElementById('technicianListContainer').innerHTML = '<div class="empty-list" style="text-align:center; padding:20px;">🚫 لا يوجد فنيون نشطون حالياً</div>';
+            return;
+        }
+        let techsWithDistance = techs.map(tech => {
+            let dist = getDistanceFromLatLonInKm(customerLatLng.lat, customerLatLng.lng, tech.lastLocation.lat, tech.lastLocation.lng);
+            return { ...tech, distance: parseFloat(dist) };
+        }).sort((a,b) => a.distance - b.distance);
+        
+        technicianMarkers.forEach(m => map.removeLayer(m));
+        technicianMarkers = [];
+        
+        function updateMarkersByZoom() {
+            let currentZoom = map.getZoom();
+            techsWithDistance.forEach(tech => {
+                let existingMarker = technicianMarkers.find(m => m.techMobile === tech.mobile);
+                let newIcon = getIconForTech(tech, currentZoom);
+                if (existingMarker) {
+                    existingMarker.setIcon(newIcon);
+                } else {
+                    let marker = L.marker([tech.lastLocation.lat, tech.lastLocation.lng], { icon: newIcon }).addTo(map);
+                    marker.techMobile = tech.mobile;
+                    marker.bindPopup(`
+                        <b>${tech.fullName || tech.companyName}</b><br>
+                        ⭐ ${tech.rating || 4.0}<br>
+                        📏 ${tech.distance} كم
+                    `);
+                    marker.on('click', () => openTechnicianProfile(tech));
+                    technicianMarkers.push(marker);
+                }
+            });
+        }
+        map.on('zoomend', updateMarkersByZoom);
+        updateMarkersByZoom();
+        
+        const listContainer = document.getElementById('technicianListContainer');
+        listContainer.innerHTML = '';
+        techsWithDistance.forEach(tech => {
+            let rating = tech.rating || 4.0;
+            let stars = '★'.repeat(Math.floor(rating)) + '☆'.repeat(5 - Math.floor(rating));
+            let techDiv = document.createElement('div');
+            techDiv.className = 'tech-item';
+            techDiv.innerHTML = `
+                <div class="tech-avatar"><i class="fas fa-user-tie"></i></div>
+                <div class="tech-info">
+                    <div class="tech-name">${tech.fullName || tech.companyName || 'فني'}</div>
+                    <div class="tech-rating">⭐ ${rating} ${stars}</div>
+                    <div class="tech-distance">📏 ${tech.distance} كم من موقعك</div>
+                </div>
+                <div><i class="fas fa-chevron-left"></i></div>
+            `;
+            techDiv.addEventListener('click', () => openTechnicianProfile(tech));
+            listContainer.appendChild(techDiv);
+        });
+    }
+    
+    function openTechnicianProfile(tech) {
+        localStorage.setItem('tempTechnician', JSON.stringify(tech));
+        window.location.href = `technician-profile.html?techId=${tech.mobile}&name=${encodeURIComponent(tech.fullName || tech.companyName)}`;
+    }
+    
+    function loadRecentOrders() {
+        let orders = getServiceRequestsByCustomer(currentUser.mobile);
+        orders.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const recentContainer = document.getElementById('recentOrdersList');
+        recentContainer.innerHTML = '';
+        if (orders.length === 0) {
+            recentContainer.innerHTML = '<div class="order-card">لا توجد طلبات سابقة</div>';
+            return;
+        }
+        orders.slice(0,3).forEach(order => {
+            const div = document.createElement('div');
+            div.className = 'order-card';
+            div.innerHTML = `<div><strong>${order.serviceType}</strong><br><span style="font-size:12px;">${new Date(order.createdAt).toLocaleDateString('ar-EG')}</span></div>
+                            <div style="color:${order.status === 'مكتمل' ? '#22c55e' : '#ef4444'}">${order.status}</div>`;
+            recentContainer.appendChild(div);
+        });
+    }
+    
+    // ** إصلاح القائمة الجانبية **
+    const menuBtn = document.getElementById('menuBtn');
+    const drawer = document.getElementById('drawer');
+    const drawerOverlay = document.getElementById('drawerOverlay');
+    
+    function openDrawer() {
+        drawer.classList.add('open');
+        drawerOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeDrawer() {
+        drawer.classList.remove('open');
+        drawerOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    
+    menuBtn.addEventListener('click', openDrawer);
+    drawerOverlay.addEventListener('click', closeDrawer);
+    document.querySelectorAll('.drawer a').forEach(link => {
+        link.addEventListener('click', closeDrawer);
+    });
+    
+    document.getElementById('newRequestMain').onclick = () => window.location.href = "new-service-request.html";
+    document.getElementById('newServiceDrawer').onclick = () => window.location.href = "new-service-request.html";
+    document.getElementById('storeBtn').onclick = () => alert("متجر الإلكترونيات - قيد التطوير");
+    
+    document.querySelectorAll('.nav-item').forEach(nav => {
+        nav.addEventListener('click', () => {
+            const type = nav.getAttribute('data-nav');
+            if(type === 'home') window.location.reload();
+            if(type === 'favorites') window.location.href = "favorites.html";
+            if(type === 'orders') window.location.href = "my-orders.html";
+            if(type === 'notifications') window.location.href = "notifications.html";
+            if(type === 'chat') window.location.href = "chat.html";
+        });
+    });
+    document.getElementById('supportAiBtn').onclick = () => alert("🤖 المساعد الذكي: سيتم تفعيل قريباً");
+    
+    generateMockTechnicians();
+    loadRecentOrders();
+    initMap();
+</script>
+</body>
+</html>

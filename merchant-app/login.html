@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - TechCare</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script type="module" src="../common/firebase-config.js"></script>
+    <script src="../common/storage.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #b45309 0%, #f59e0b 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            direction: rtl;
+        }
+        .login-card {
+            background: white;
+            border-radius: 40px;
+            padding: 40px 30px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo i { font-size: 60px; color: #b45309; }
+        h2 { text-align: center; color: #1e293b; margin-bottom: 30px; }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #64748b;
+        }
+        .tab-btn.active { color: #b45309; border-bottom: 3px solid #b45309; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .form-group { margin-bottom: 20px; }
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 30px;
+            font-size: 16px;
+            font-family: inherit;
+        }
+        input:focus { border-color: #f59e0b; outline: none; }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: #b45309;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn:hover { background: #f59e0b; }
+        .btn-google { background: #db4437; margin-top: 15px; }
+        .btn-google:hover { background: #c53929; }
+        .btn-demo { background: #f59e0b; margin-top: 15px; }
+        .btn-demo:hover { background: #d97706; }
+        .divider { text-align: center; margin: 20px 0; position: relative; }
+        .divider::before, .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background: #e2e8f0;
+        }
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+        .register-link { text-align: center; margin-top: 20px; }
+        .register-link a { color: #f59e0b; text-decoration: none; cursor: pointer; }
+        .error-msg { color: #ef4444; font-size: 12px; margin-top: 5px; display: none; }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 20px;
+            right: 20px;
+            background: #22c55e;
+            color: white;
+            padding: 12px;
+            border-radius: 60px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo"><i class="fas fa-store"></i></div>
+        <h2>تسجيل الدخول</h2>
+        
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="email">البريد الإلكتروني</button>
+            <button class="tab-btn" data-tab="phone">رقم الجوال</button>
+        </div>
+        
+        <div id="emailTab" class="tab-content active">
+            <div class="form-group"><input type="email" id="email" placeholder="البريد الإلكتروني"><div class="error-msg" id="emailError"></div></div>
+            <div class="form-group"><input type="password" id="emailPassword" placeholder="كلمة المرور"><div class="error-msg" id="emailPasswordError"></div></div>
+            <button class="btn" id="emailLoginBtn">دخول</button>
+        </div>
+        
+        <div id="phoneTab" class="tab-content">
+            <div class="form-group"><input type="tel" id="mobile" placeholder="رقم الجوال (05xxxxxxxx)" maxlength="10"><div class="error-msg" id="mobileError"></div></div>
+            <div class="form-group"><input type="password" id="phonePassword" placeholder="كلمة المرور"><div class="error-msg" id="phonePasswordError"></div></div>
+            <button class="btn" id="phoneLoginBtn">دخول</button>
+        </div>
+        
+        <div class="divider">أو</div>
+        
+        <button class="btn btn-google" id="googleBtn"><i class="fab fa-google"></i> تسجيل الدخول بحساب Google</button>
+        <button class="btn btn-demo" id="demoBtn"><i class="fas fa-flask"></i> دخول تجريبي</button>
+        
+        <div class="register-link">ليس لديك حساب؟ <a id="registerLink">التسجيل كتاجر</a></div>
+    </div>
+    <div id="toast" class="toast"></div>
+
+    <script>
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab + 'Tab').classList.add('active');
+            });
+        });
+
+        document.getElementById('registerLink').addEventListener('click', () => {
+            window.location.href = "merchant-register.html";
+        });
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.backgroundColor = isError ? '#ef4444' : '#22c55e';
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 3000);
+        }
+
+        function hideError(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
+        function showError(id, msg) { const el = document.getElementById(id); if (el) { el.innerText = msg; el.style.display = 'block'; } }
+        function isValidSaudiMobile(mobile) { return /^05\d{8}$/.test(mobile); }
+        function isValidPassword(password) { return password.length >= 8; }
+
+        document.getElementById('emailLoginBtn').addEventListener('click', () => {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('emailPassword').value;
+            hideError('emailError'); hideError('emailPasswordError');
+            if (!email) { showError('emailError', 'يرجى إدخال البريد الإلكتروني'); return; }
+            if (!password) { showError('emailPasswordError', 'يرجى إدخال كلمة المرور'); return; }
+            if (!isValidPassword(password)) { showError('emailPasswordError', 'كلمة المرور يجب أن تكون 8 أحرف أو أرقام على الأقل'); return; }
+            const merchants = getMerchants();
+            const user = merchants.find(m => m.email === email && m.password === password);
+            if (user) { saveCurrentUser({ ...user, role: 'merchant' }); showToast('تم تسجيل الدخول بنجاح'); setTimeout(() => window.location.href = "merchant-dashboard.html", 1000); }
+            else { showError('emailError', 'البريد الإلكتروني أو كلمة المرور غير صحيحة'); }
+        });
+
+        document.getElementById('phoneLoginBtn').addEventListener('click', () => {
+            const mobile = document.getElementById('mobile').value.trim();
+            const password = document.getElementById('phonePassword').value;
+            hideError('mobileError'); hideError('phonePasswordError');
+            if (!mobile) { showError('mobileError', 'يرجى إدخال رقم الجوال'); return; }
+            if (!isValidSaudiMobile(mobile)) { showError('mobileError', 'رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام'); return; }
+            if (!password) { showError('phonePasswordError', 'يرجى إدخال كلمة المرور'); return; }
+            if (!isValidPassword(password)) { showError('phonePasswordError', 'كلمة المرور يجب أن تكون 8 أحرف أو أرقام على الأقل'); return; }
+            const merchants = getMerchants();
+            const user = merchants.find(m => m.mobile === mobile && m.password === password);
+            if (user) { saveCurrentUser({ ...user, role: 'merchant' }); showToast('تم تسجيل الدخول بنجاح'); setTimeout(() => window.location.href = "merchant-dashboard.html", 1000); }
+            else { showError('mobileError', 'رقم الجوال أو كلمة المرور غير صحيحة'); }
+        });
+
+        document.getElementById('demoBtn').addEventListener('click', () => {
+            const demoUser = { fullName: "تاجر تجريبي", mobile: "0512345678", email: "demo@techcare.com", role: "merchant", isDemo: true };
+            saveCurrentUser(demoUser);
+            showToast('✅ وضع تجريبي - تم الدخول كضيف');
+            setTimeout(() => window.location.href = "merchant-dashboard.html", 1000);
+        });
+
+        document.getElementById('googleBtn').addEventListener('click', () => {
+            showToast('🔧 جاري التطوير - سيتم ربطه مع Firebase قريباً');
+        });
+    </script>
+</body>
+</html>
