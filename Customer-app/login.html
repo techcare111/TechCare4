@@ -174,7 +174,7 @@
     <div id="toast" class="toast"></div>
 
     <script>
-        // ============= التبديل بين التبويبات =============
+        // التبديل بين التبويبات
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -184,12 +184,11 @@
             });
         });
 
-        // ============= رابط التسجيل =============
+        // رابط التسجيل
         document.getElementById('registerLink').addEventListener('click', () => {
             window.location.href = "customer-register.html";
         });
 
-        // ============= عرض الرسائل =============
         function showToast(msg, isError = false) {
             const toast = document.getElementById('toast');
             toast.innerText = msg;
@@ -219,8 +218,8 @@
             return password.length >= 8;
         }
 
-        // ============= تسجيل الدخول بالبريد الإلكتروني (localStorage) =============
-        document.getElementById('emailLoginBtn').addEventListener('click', () => {
+        // ============= تسجيل الدخول بالبريد الإلكتروني (Firebase فقط) =============
+        document.getElementById('emailLoginBtn').addEventListener('click', async () => {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('emailPassword').value;
             
@@ -240,19 +239,50 @@
                 return;
             }
             
-            const customers = getCustomers();
-            const user = customers.find(c => c.email === email && c.password === password);
-            
-            if (user) {
-                saveCurrentUser({ ...user, role: 'customer' });
-                showToast('تم تسجيل الدخول بنجاح');
-                setTimeout(() => window.location.href = "customer-dashboard.html", 1000);
-            } else {
-                showError('emailError', 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
+            try {
+                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+                const { getAuth, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+                const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBrTaYLYWW9H31_O6fWL_36BKB4Oim0ksM",
+                    authDomain: "techcare-80c7b.firebaseapp.com",
+                    projectId: "techcare-80c7b",
+                    storageBucket: "techcare-80c7b.firebasestorage.app",
+                    messagingSenderId: "94772613240",
+                    appId: "1:94772613240:web:3d0ae9c03561e7c6bb1d8d",
+                    measurementId: "G-59VFXVH57V"
+                };
+                
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+                
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const uid = userCredential.user.uid;
+                
+                const userDoc = await getDoc(doc(db, 'customers', uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    saveCurrentUser({ ...userData, uid, role: 'customer' });
+                    showToast('تم تسجيل الدخول بنجاح');
+                    setTimeout(() => window.location.href = "customer-dashboard.html", 1000);
+                } else {
+                    showError('emailError', 'هذا الحساب غير مسجل كعميل');
+                }
+            } catch (error) {
+                console.error(error);
+                if (error.code === 'auth/user-not-found') {
+                    showError('emailError', 'البريد الإلكتروني غير مسجل');
+                } else if (error.code === 'auth/wrong-password') {
+                    showError('emailPasswordError', 'كلمة المرور غير صحيحة');
+                } else {
+                    showError('emailError', 'حدث خطأ، حاول مرة أخرى');
+                }
             }
         });
 
-        // ============= تسجيل الدخول برقم الجوال (localStorage) =============
+        // ============= تسجيل الدخول برقم الجوال (localStorage مؤقتاً) =============
         document.getElementById('phoneLoginBtn').addEventListener('click', () => {
             const mobile = document.getElementById('mobile').value.trim();
             const password = document.getElementById('phonePassword').value;
