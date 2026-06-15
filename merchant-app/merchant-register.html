@@ -23,7 +23,7 @@
             padding: 24px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
         }
-        h1 { text-align: center; color: #1e3a8a; margin-bottom: 8px; }
+        h1 { text-align: center; color: #b45309; margin-bottom: 8px; }
         .sub { text-align: center; color: #475569; margin-bottom: 24px; font-size: 14px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; font-weight: 600; margin-bottom: 6px; color: #0f172a; }
@@ -37,9 +37,9 @@
             background: white;
         }
         input:focus, select:focus, textarea:focus {
-            border-color: #3b82f6;
+            border-color: #f59e0b;
             outline: none;
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+            box-shadow: 0 0 0 3px rgba(245,158,11,0.1);
         }
         .file-input {
             padding: 8px;
@@ -49,8 +49,8 @@
         .map-container { border-radius: 20px; overflow: hidden; border: 2px solid #e2e8f0; margin-bottom: 10px; }
         #map { height: 220px; width: 100%; }
         .current-loc-btn {
-            background: #eef2ff; border: none; padding: 10px 16px; border-radius: 40px;
-            font-size: 14px; font-weight: 500; color: #1e40af; cursor: pointer;
+            background: #fef3c7; border: none; padding: 10px 16px; border-radius: 40px;
+            font-size: 14px; font-weight: 500; color: #b45309; cursor: pointer;
             display: inline-flex; align-items: center; gap: 8px; margin-top: 6px;
         }
         .button-group { display: flex; gap: 16px; margin-top: 28px; }
@@ -58,9 +58,9 @@
             flex: 1; padding: 14px; border-radius: 40px; font-weight: bold; font-size: 16px;
             cursor: pointer; border: none; text-align: center;
         }
-        .btn-primary { background: #3b82f6; color: white; }
-        .btn-primary:hover { background: #2563eb; }
-        .btn-outline { background: white; border: 2px solid #3b82f6; color: #3b82f6; }
+        .btn-primary { background: #f59e0b; color: white; }
+        .btn-primary:hover { background: #d97706; }
+        .btn-outline { background: white; border: 2px solid #f59e0b; color: #f59e0b; }
         .btn-demo {
             background: #f59e0b; color: white; border: none; padding: 14px; border-radius: 40px;
             font-weight: bold; font-size: 16px; cursor: pointer; text-align: center; margin-top: 10px;
@@ -84,7 +84,7 @@
             margin-left: 5px;
         }
         .download-link {
-            color: #3b82f6;
+            color: #f59e0b;
             cursor: pointer;
             text-decoration: underline;
             margin-right: 15px;
@@ -174,6 +174,12 @@
     </div>
 
     <div class="form-group">
+        <label id="labelPassword">كلمة المرور <span style="color:red;">*</span></label>
+        <input type="password" id="password" placeholder="********">
+        <div class="error-msg" id="errorPassword"></div>
+    </div>
+
+    <div class="form-group">
         <label id="labelMap">الموقع على الخريطة <span style="color:red;">*</span></label>
         <div class="map-container">
             <div id="map"></div>
@@ -215,7 +221,7 @@
             title: "📝 تسجيل تاجر", sub: "يرجى إكمال بيانات المؤسسة بدقة",
             companyName: "اسم المؤسسة", crNumber: "رقم السجل التجاري",
             commercialRecord: "إرفاق السجل التجاري", city: "المدينة", neighborhood: "الحي",
-            activityType: "نوع النشاط", email: "البريد الإلكتروني", mobile: "رقم الجوال",
+            activityType: "نوع النشاط", email: "البريد الإلكتروني", mobile: "رقم الجوال", password: "كلمة المرور",
             map: "الموقع على الخريطة", currentLoc: "تحديد موقعي الحالي",
             save: "حفظ", continue: "متابعة",
             agree: "أوافق على العقد والشروط",
@@ -228,6 +234,7 @@
             errorActivityType: "يرجى اختيار نوع النشاط",
             errorEmail: "بريد إلكتروني غير صالح",
             errorMobile: "يجب أن يبدأ بـ 05 ويتكون من 10 أرقام",
+            errorPassword: "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
             errorMap: "يرجى تحديد الموقع على الخريطة",
             errorAgree: "يجب الموافقة على العقد والشروط",
             saveSuccess: "تم حفظ بيانات التاجر بنجاح ✅"
@@ -236,7 +243,7 @@
             title: "📝 Merchant Registration", sub: "Please fill in the business details accurately",
             companyName: "Company Name", crNumber: "Commercial Registration Number",
             commercialRecord: "Upload Commercial Record", city: "City", neighborhood: "Neighborhood",
-            activityType: "Activity Type", email: "Email", mobile: "Mobile Number",
+            activityType: "Activity Type", email: "Email", mobile: "Mobile Number", password: "Password",
             map: "Location on Map", currentLoc: "Use my current location",
             save: "Save", continue: "Continue",
             agree: "I agree to the terms and conditions",
@@ -249,6 +256,7 @@
             errorActivityType: "Please select activity type",
             errorEmail: "Invalid email address",
             errorMobile: "Must start with 05 and be 10 digits",
+            errorPassword: "Password must be at least 8 characters",
             errorMap: "Please pin your location on the map",
             errorAgree: "You must agree to the terms",
             saveSuccess: "Merchant data saved successfully ✅"
@@ -257,7 +265,7 @@
             title: "📝 تاجر کی رجسٹریشن", sub: "براہ کرم کاروبار کی تفصیلات درست طریقے سے پُر کریں",
             companyName: "کاروبار کا نام", crNumber: "تجارتی رجسٹریشن نمبر",
             commercialRecord: "تجارتی ریکارڈ اپ لوڈ کریں", city: "شہر", neighborhood: "محلہ",
-            activityType: "سرگرمی کی قسم", email: "ای میل", mobile: "فون نمبر",
+            activityType: "سرگرمی کی قسم", email: "ای میل", mobile: "فون نمبر", password: "پاس ورڈ",
             map: "نقشہ پر مقام", currentLoc: "میری موجودہ لوکیشن استعمال کریں",
             save: "محفوظ کریں", continue: "جاری رکھیں",
             agree: "میں شرائط و ضوابط سے متفق ہوں",
@@ -270,6 +278,7 @@
             errorActivityType: "براہ کرم سرگرمی کی قسم منتخب کریں",
             errorEmail: "غلط ای میل پتہ",
             errorMobile: "فون نمبر 05 سے شروع ہو کر 10 ہندسوں پر مشتمل ہو",
+            errorPassword: "پاس ورڈ کم از کم 8 حروف پر مشتمل ہو",
             errorMap: "براہ کرم نقشہ پر اپنا مقام منتخب کریں",
             errorAgree: "آپ کو شرائط سے متفق ہونا ضروری ہے",
             saveSuccess: "تاجر کا ڈیٹا کامیابی سے محفوظ ہوگیا ✅"
@@ -288,6 +297,7 @@
         document.getElementById('labelActivityType').innerHTML = tPage('activityType') + ' <span style="color:red;">*</span>';
         document.getElementById('labelEmail').innerHTML = tPage('email') + ' <span style="color:red;">*</span>';
         document.getElementById('labelMobile').innerHTML = tPage('mobile') + ' <span style="color:red;">*</span>';
+        document.getElementById('labelPassword').innerHTML = tPage('password') + ' <span style="color:red;">*</span>';
         document.getElementById('labelMap').innerHTML = tPage('map') + ' <span style="color:red;">*</span>';
         document.getElementById('btnLocText').innerText = tPage('currentLoc');
         document.getElementById('btnSaveText').innerText = tPage('save');
@@ -374,6 +384,7 @@
         const activityType = document.getElementById('activityType').value;
         const email = document.getElementById('email').value.trim();
         const mobile = document.getElementById('mobile').value.trim();
+        const password = document.getElementById('password').value;
         const agree = document.getElementById('agreeContract').checked;
         const emailRegex = /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/;
 
@@ -401,6 +412,10 @@
         if (!mobile.match(/^05\d{8}$/)) { showError('errorMobile', tPage('errorMobile')); isValid = false; }
         else { hideError('errorMobile'); }
 
+        if (!password) { showError('errorPassword', tPage('errorPassword')); isValid = false; }
+        else if (password.length < 8) { showError('errorPassword', 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'); isValid = false; }
+        else { hideError('errorPassword'); }
+
         if (!currentLatLng) { showError('errorMap', tPage('errorMap')); isValid = false; }
         else { hideError('errorMap'); }
 
@@ -420,61 +435,111 @@
             activityType: document.getElementById('activityType').value,
             email: document.getElementById('email').value.trim(),
             mobile: document.getElementById('mobile').value.trim(),
+            password: document.getElementById('password').value,
             latitude: currentLatLng.lat,
             longitude: currentLatLng.lng,
-            role: 'merchant',
-            timestamp: new Date().toISOString()
+            role: 'merchant'
         };
     }
 
-    // حفظ بيانات التاجر في localStorage
-    function saveMerchantData(data, callback) {
-        let merchants = JSON.parse(localStorage.getItem('merchants')) || [];
-        const existingIndex = merchants.findIndex(m => m.mobile === data.mobile);
-        if (existingIndex !== -1) {
-            merchants[existingIndex] = { ...merchants[existingIndex], ...data };
-        } else {
-            merchants.push(data);
+    async function saveToFirebase(formData, fileBase64) {
+        try {
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+            const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+            const { getFirestore, doc, setDoc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            
+            const firebaseConfig = {
+                apiKey: "AIzaSyBrTaYLYWW9H31_O6fWL_36BKB4Oim0ksM",
+                authDomain: "techcare-80c7b.firebaseapp.com",
+                projectId: "techcare-80c7b",
+                storageBucket: "techcare-80c7b.firebasestorage.app",
+                messagingSenderId: "94772613240",
+                appId: "1:94772613240:web:3d0ae9c03561e7c6bb1d8d",
+                measurementId: "G-59VFXVH57V"
+            };
+            
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            
+            let uid;
+            let isNewUser = false;
+            
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+                uid = userCredential.user.uid;
+                isNewUser = false;
+            } catch (signInError) {
+                if (signInError.code === 'auth/user-not-found') {
+                    const newUser = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+                    uid = newUser.user.uid;
+                    isNewUser = true;
+                } else {
+                    throw signInError;
+                }
+            }
+            
+            const merchantDoc = await getDoc(doc(db, 'merchants', uid));
+            
+            if (merchantDoc.exists()) {
+                showToastMsg('هذا المستخدم مسجل بالفعل كتاجر', true);
+                return false;
+            }
+            
+            const merchantData = {
+                companyName: formData.companyName,
+                crNumber: formData.crNumber,
+                crFileBase64: fileBase64,
+                mobile: formData.mobile,
+                email: formData.email,
+                city: formData.city,
+                neighborhood: formData.neighborhood,
+                activityType: formData.activityType,
+                latitude: formData.latitude,
+                longitude: formData.longitude,
+                role: 'merchant',
+                createdAt: new Date().toISOString()
+            };
+            
+            await setDoc(doc(db, 'merchants', uid), merchantData);
+            saveCurrentUser({ ...merchantData, uid, role: 'merchant' });
+            
+            if (isNewUser) {
+                showToastMsg('تم إنشاء حساب تاجر جديد بنجاح ✅');
+            } else {
+                showToastMsg('تم إضافة دور تاجر لحسابك الحالي بنجاح ✅');
+            }
+            
+            return true;
+        } catch (error) {
+            console.error(error);
+            showToastMsg('خطأ في التسجيل: ' + error.message, true);
+            return false;
         }
-        localStorage.setItem('merchants', JSON.stringify(merchants));
-        localStorage.setItem('currentUser', JSON.stringify({ ...data, type: 'merchant', role: 'merchant' }));
-        callback(true);
     }
 
-    let pendingData = null;
-    function processSaveAndContinue(redirect = true) {
+    async function processSaveAndContinue(redirect = true) {
         if (!validateForm()) return;
+        
         const formData = collectFormData();
         const file = document.getElementById('crFile').files[0];
-        if (!file) {
-            if (!validateForm()) return;
-            saveMerchantData(formData, (success) => {
-                if (success) {
-                    showToastMsg(tPage('saveSuccess'));
-                    if (redirect) {
-                        window.location.href = "../common/set-password.html";
-                    }
-                } else {
-                    showToastMsg("حدث خطأ أثناء الحفظ", true);
-                }
+        
+        let fileBase64 = null;
+        if (file) {
+            fileBase64 = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(file);
             });
-            return;
         }
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            formData.crFileBase64 = e.target.result;
-            saveMerchantData(formData, (success) => {
-                if (success) {
-                    showToastMsg(tPage('saveSuccess'));
-                    if (redirect) {
-                        window.location.href = "../common/set-password.html";
-                    }
-                } else {
-                    showToastMsg("حدث خطأ أثناء الحفظ", true);
-                }
-            });
-        };
-        reader.readAsDataURL(file);
+        
+        const success = await saveToFirebase(formData, fileBase64);
+        
+        if (success && redirect) {
+            setTimeout(() => {
+                window.location.href = "merchant-dashboard.html";
+            }, 1500);
+        }
     }
 
     document.getElementById('saveBtn').addEventListener('click', () => {
@@ -505,8 +570,7 @@
             latitude: 24.7136,
             longitude: 46.6753,
             role: "merchant",
-            isDemo: true,
-            timestamp: new Date().toISOString()
+            isDemo: true
         };
         localStorage.setItem('currentUser', JSON.stringify(demoMerchant));
         sessionStorage.setItem('demoMode', 'true');
