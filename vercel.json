@@ -1,5 +1,9 @@
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/Customer-App/(.*)", "dest": "/Customer-App/index.html" },
+    { "src": "/Technician-App/(.*)", "dest": "/Technician-App/index.html" },
+    { "src": "/Merchant-App/(.*)", "dest": "/Merchant-App/index.html" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
