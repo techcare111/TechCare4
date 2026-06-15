@@ -224,7 +224,6 @@
         }
     };
 
-    // إضافة خيار "أخرى" لكل قائمة موديلات
     for (let category in typesByCategory) {
         if (category === "office" || category === "home") continue;
         for (let brand in typesByCategory[category]) {
@@ -397,8 +396,49 @@
         return valid;
     }
 
+    async function saveRequestToFirebase(requestData) {
+        try {
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+            const { getAuth } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+            const { getFirestore, collection, addDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            
+            const firebaseConfig = {
+                apiKey: "AIzaSyBrTaYLYWW9H31_O6fWL_36BKB4Oim0ksM",
+                authDomain: "techcare-80c7b.firebaseapp.com",
+                projectId: "techcare-80c7b",
+                storageBucket: "techcare-80c7b.firebasestorage.app",
+                messagingSenderId: "94772613240",
+                appId: "1:94772613240:web:3d0ae9c03561e7c6bb1d8d",
+                measurementId: "G-59VFXVH57V"
+            };
+            
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            
+            // الحصول على uid المستخدم الحالي
+            const user = auth.currentUser;
+            if (!user) {
+                throw new Error("المستخدم غير مسجل دخوله");
+            }
+            
+            requestData.customerUid = user.uid;
+            requestData.createdAt = new Date().toISOString();
+            requestData.status = "pending";
+            
+            const docRef = await addDoc(collection(db, 'service_requests'), requestData);
+            console.log("تم حفظ الطلب في Firebase بنجاح، ID:", docRef.id);
+            return true;
+        } catch (error) {
+            console.error("خطأ في حفظ الطلب:", error);
+            showToast("حدث خطأ أثناء حفظ الطلب", true);
+            return false;
+        }
+    }
+
     async function saveRequest() {
         if (!validateForm()) return;
+        
         let filesBase64 = [];
         if (!demoMode) {
             for (let file of selectedFiles) {
@@ -410,8 +450,8 @@
                 filesBase64.push(base64);
             }
         }
-        const request = {
-            id: Date.now(),
+        
+        const requestData = {
             requestNumber: Date.now(),
             customerName: currentUser.fullName,
             customerMobile: currentUser.mobile,
@@ -421,17 +461,26 @@
             description: document.getElementById('description').value,
             location: currentLatLng || { lat: 24.7136, lng: 46.6753 },
             files: filesBase64,
-            status: "قيد الانتظار",
-            demo: demoMode,
-            createdAt: new Date().toISOString()
+            demo: demoMode
         };
-        saveServiceRequest(request);
-        showToast(demoMode ? "✅ تم إرسال طلب تجريبي (لن يتم تنفيذه)" : "تم إرسال طلبك بنجاح، سيتم التواصل معك قريباً ✅");
-        setTimeout(() => { window.location.href = "my-orders.html"; }, 2000);
+        
+        if (demoMode) {
+            // وضع تجريبي: حفظ في localStorage فقط
+            const request = { ...requestData, id: Date.now(), status: "قيد الانتظار", createdAt: new Date().toISOString() };
+            saveServiceRequest(request);
+            showToast("✅ تم إرسال طلب تجريبي (لن يتم تنفيذه)");
+            setTimeout(() => { window.location.href = "my-orders.html"; }, 2000);
+            return;
+        }
+        
+        const success = await saveRequestToFirebase(requestData);
+        if (success) {
+            showToast("تم إرسال طلبك بنجاح ✅");
+            setTimeout(() => { window.location.href = "my-orders.html"; }, 2000);
+        }
     }
 
     document.getElementById('submitBtn').addEventListener('click', saveRequest);
-    // ✅ التعديل الوحيد: تغيير dashboard.html إلى customer-dashboard.html
     document.getElementById('cancelBtn').addEventListener('click', () => { window.location.href = "customer-dashboard.html"; });
     document.getElementById('currentLocationBtn').addEventListener('click', getCurrentLocation);
     window.addEventListener('load', () => {
