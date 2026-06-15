@@ -264,7 +264,7 @@
                 const userDoc = await getDoc(doc(db, 'customers', uid));
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
-                    saveCurrentUser({ ...userData, uid, role: 'customer' });
+                    saveCurrentUser({ ...userData, uid, role: 'customer', password: password });
                     showToast('تم تسجيل الدخول بنجاح');
                     setTimeout(() => window.location.href = "customer-dashboard.html", 1000);
                 } else {
@@ -372,7 +372,13 @@
                         createdAt: new Date().toISOString()
                     };
                     await setDoc(doc(db, 'customers', user.uid), userData);
-                    showToast('تم إنشاء حساب جديد بنجاح');
+                    
+                    // ✅ التعديل: التوجه إلى صفحة إضافة كلمة المرور
+                    showToast('مرحباً بك! الرجاء إضافة كلمة مرور لحسابك');
+                    setTimeout(() => {
+                        window.location.href = `../common/set-password-google.html?uid=${user.uid}&email=${user.email}&role=customer`;
+                    }, 1500);
+                    return;
                 } else {
                     userData = userDoc.data();
                 }
