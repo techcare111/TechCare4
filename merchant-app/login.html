@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الدخول - TechCare</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script type="module" src="../common/firebase-config.js"></script>
     <script src="../common/storage.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -137,6 +136,7 @@
     <div id="toast" class="toast"></div>
 
     <script>
+        // التبديل بين التبويبات
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -146,6 +146,7 @@
             });
         });
 
+        // رابط التسجيل
         document.getElementById('registerLink').addEventListener('click', () => {
             window.location.href = "merchant-register.html";
         });
@@ -163,33 +164,115 @@
         function isValidSaudiMobile(mobile) { return /^05\d{8}$/.test(mobile); }
         function isValidPassword(password) { return password.length >= 8; }
 
-        document.getElementById('emailLoginBtn').addEventListener('click', () => {
+        // ============= تسجيل الدخول بالبريد الإلكتروني (Firebase + localStorage) =============
+        document.getElementById('emailLoginBtn').addEventListener('click', async () => {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('emailPassword').value;
-            hideError('emailError'); hideError('emailPasswordError');
-            if (!email) { showError('emailError', 'يرجى إدخال البريد الإلكتروني'); return; }
-            if (!password) { showError('emailPasswordError', 'يرجى إدخال كلمة المرور'); return; }
-            if (!isValidPassword(password)) { showError('emailPasswordError', 'كلمة المرور يجب أن تكون 8 أحرف أو أرقام على الأقل'); return; }
+            
+            hideError('emailError');
+            hideError('emailPasswordError');
+            
+            if (!email) {
+                showError('emailError', 'يرجى إدخال البريد الإلكتروني');
+                return;
+            }
+            if (!password) {
+                showError('emailPasswordError', 'يرجى إدخال كلمة المرور');
+                return;
+            }
+            if (!isValidPassword(password)) {
+                showError('emailPasswordError', 'كلمة المرور يجب أن تكون 8 أحرف أو أرقام على الأقل');
+                return;
+            }
+            
+            // محاولة Firebase أولاً
+            try {
+                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+                const { getAuth, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+                const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBrTaYLYWW9H31_O6fWL_36BKB4Oim0ksM",
+                    authDomain: "techcare-80c7b.firebaseapp.com",
+                    projectId: "techcare-80c7b",
+                    storageBucket: "techcare-80c7b.firebasestorage.app",
+                    messagingSenderId: "94772613240",
+                    appId: "1:94772613240:web:3d0ae9c03561e7c6bb1d8d",
+                    measurementId: "G-59VFXVH57V"
+                };
+                
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+                
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const uid = userCredential.user.uid;
+                
+                const userDoc = await getDoc(doc(db, 'merchants', uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    saveCurrentUser({ ...userData, uid, role: 'merchant' });
+                    showToast('تم تسجيل الدخول بنجاح');
+                    setTimeout(() => window.location.href = "merchant-dashboard.html", 1000);
+                    return;
+                } else {
+                    showError('emailError', 'هذا الحساب غير مسجل كتاجر');
+                    return;
+                }
+            } catch (firebaseError) {
+                console.log("Firebase login failed, trying localStorage");
+            }
+            
+            // Backup: localStorage
             const merchants = getMerchants();
             const user = merchants.find(m => m.email === email && m.password === password);
-            if (user) { saveCurrentUser({ ...user, role: 'merchant' }); showToast('تم تسجيل الدخول بنجاح'); setTimeout(() => window.location.href = "merchant-dashboard.html", 1000); }
-            else { showError('emailError', 'البريد الإلكتروني أو كلمة المرور غير صحيحة'); }
+            if (user) {
+                saveCurrentUser({ ...user, role: 'merchant' });
+                showToast('تم تسجيل الدخول بنجاح');
+                setTimeout(() => window.location.href = "merchant-dashboard.html", 1000);
+            } else {
+                showError('emailError', 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
+            }
         });
 
+        // ============= تسجيل الدخول برقم الجوال (localStorage) =============
         document.getElementById('phoneLoginBtn').addEventListener('click', () => {
             const mobile = document.getElementById('mobile').value.trim();
             const password = document.getElementById('phonePassword').value;
-            hideError('mobileError'); hideError('phonePasswordError');
-            if (!mobile) { showError('mobileError', 'يرجى إدخال رقم الجوال'); return; }
-            if (!isValidSaudiMobile(mobile)) { showError('mobileError', 'رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام'); return; }
-            if (!password) { showError('phonePasswordError', 'يرجى إدخال كلمة المرور'); return; }
-            if (!isValidPassword(password)) { showError('phonePasswordError', 'كلمة المرور يجب أن تكون 8 أحرف أو أرقام على الأقل'); return; }
+            
+            hideError('mobileError');
+            hideError('phonePasswordError');
+            
+            if (!mobile) {
+                showError('mobileError', 'يرجى إدخال رقم الجوال');
+                return;
+            }
+            if (!isValidSaudiMobile(mobile)) {
+                showError('mobileError', 'رقم الجوال يجب أن يبدأ بـ 05 ويتكون من 10 أرقام');
+                return;
+            }
+            if (!password) {
+                showError('phonePasswordError', 'يرجى إدخال كلمة المرور');
+                return;
+            }
+            if (!isValidPassword(password)) {
+                showError('phonePasswordError', 'كلمة المرور يجب أن تكون 8 أحرف أو أرقام على الأقل');
+                return;
+            }
+            
             const merchants = getMerchants();
             const user = merchants.find(m => m.mobile === mobile && m.password === password);
-            if (user) { saveCurrentUser({ ...user, role: 'merchant' }); showToast('تم تسجيل الدخول بنجاح'); setTimeout(() => window.location.href = "merchant-dashboard.html", 1000); }
-            else { showError('mobileError', 'رقم الجوال أو كلمة المرور غير صحيحة'); }
+            
+            if (user) {
+                saveCurrentUser({ ...user, role: 'merchant' });
+                showToast('تم تسجيل الدخول بنجاح');
+                setTimeout(() => window.location.href = "merchant-dashboard.html", 1000);
+            } else {
+                showError('mobileError', 'رقم الجوال أو كلمة المرور غير صحيحة');
+            }
         });
 
+        // ============= الزر التجريبي =============
         document.getElementById('demoBtn').addEventListener('click', () => {
             const demoUser = { fullName: "تاجر تجريبي", mobile: "0512345678", email: "demo@techcare.com", role: "merchant", isDemo: true };
             saveCurrentUser(demoUser);
@@ -197,8 +280,60 @@
             setTimeout(() => window.location.href = "merchant-dashboard.html", 1000);
         });
 
-        document.getElementById('googleBtn').addEventListener('click', () => {
-            showToast('🔧 جاري التطوير - سيتم ربطه مع Firebase قريباً');
+        // ============= تسجيل الدخول بـ Google (Firebase) =============
+        document.getElementById('googleBtn').addEventListener('click', async () => {
+            showToast('جاري الاتصال بـ Google...');
+            
+            try {
+                const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+                const { getAuth, signInWithPopup, GoogleAuthProvider } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+                const { getFirestore, doc, getDoc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+                
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBrTaYLYWW9H31_O6fWL_36BKB4Oim0ksM",
+                    authDomain: "techcare-80c7b.firebaseapp.com",
+                    projectId: "techcare-80c7b",
+                    storageBucket: "techcare-80c7b.firebasestorage.app",
+                    messagingSenderId: "94772613240",
+                    appId: "1:94772613240:web:3d0ae9c03561e7c6bb1d8d",
+                    measurementId: "G-59VFXVH57V"
+                };
+                
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+                const provider = new GoogleAuthProvider();
+                
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                
+                const userDoc = await getDoc(doc(db, 'merchants', user.uid));
+                
+                let userData;
+                if (!userDoc.exists()) {
+                    // إنشاء حساب جديد تلقائياً
+                    userData = {
+                        fullName: user.displayName || "تاجر Google",
+                        email: user.email,
+                        mobile: "",
+                        photoURL: user.photoURL || "",
+                        role: "merchant",
+                        createdAt: new Date().toISOString()
+                    };
+                    await setDoc(doc(db, 'merchants', user.uid), userData);
+                    showToast('تم إنشاء حساب تاجر جديد بنجاح');
+                } else {
+                    userData = userDoc.data();
+                }
+                
+                saveCurrentUser({ ...userData, uid: user.uid, role: 'merchant' });
+                showToast('تم تسجيل الدخول بنجاح');
+                setTimeout(() => window.location.href = "merchant-dashboard.html", 1000);
+                
+            } catch (error) {
+                console.error(error);
+                showToast('فشل تسجيل الدخول: ' + error.message, true);
+            }
         });
     </script>
 </body>
