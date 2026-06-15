@@ -7,7 +7,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Cairo', sans-serif;
+            font-family: 'Cairo', 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
             min-height: 100vh;
             display: flex;
@@ -16,27 +16,56 @@
             direction: rtl;
             padding: 20px;
         }
-        .container { text-align: center; }
+        .container { max-width: 800px; width: 100%; text-align: center; }
         h1 { color: white; font-size: 3rem; margin-bottom: 20px; }
-        .subtitle { color: rgba(255,255,255,0.9); margin-bottom: 50px; }
-        .links { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
-        .btn {
-            background: white; color: #1e40af; padding: 15px 30px;
-            border-radius: 50px; text-decoration: none; font-weight: bold;
-            font-size: 1.2rem; transition: 0.3s;
+        .subtitle { color: rgba(255,255,255,0.9); margin-bottom: 50px; font-size: 1.2rem; }
+        .cards { display: flex; flex-wrap: wrap; gap: 25px; justify-content: center; }
+        .card {
+            background: white;
+            border-radius: 32px;
+            padding: 30px 25px;
+            width: 220px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-        .btn:hover { transform: scale(1.05); background: #e2e8f0; }
+        .card:hover { transform: translateY(-10px); }
+        .card i { font-size: 50px; margin-bottom: 15px; }
+        .card.customer i { color: #3b82f6; }
+        .card.technician i { color: #10b981; }
+        .card.merchant i { color: #f59e0b; }
+        .card h3 { font-size: 1.5rem; margin-bottom: 10px; }
+        .card p { color: #64748b; font-size: 0.9rem; }
+        @media (max-width: 600px) {
+            .cards { gap: 15px; }
+            .card { width: 180px; padding: 20px 15px; }
+            h1 { font-size: 2rem; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>TechCare</h1>
-        <div class="subtitle">اختر التطبيق المناسب لك</div>
-        <div class="links">
-            <a href="Customer-App/index.html" class="btn">👤 تطبيق العميل</a>
-            <a href="Technician-App/index.html" class="btn">🔧 تطبيق الفني</a>
-            <a href="Merchant-App/index.html" class="btn">📦 تطبيق التاجر</a>
+        <div class="subtitle">منصة متكاملة للصيانة والتجارة الإلكترونية</div>
+        <div class="cards">
+            <div class="card customer" onclick="window.location.href='./Customer-App/index.html'">
+                <i class="fas fa-user-circle"></i>
+                <h3>عميل</h3>
+                <p>طلب خدمات الصيانة</p>
+            </div>
+            <div class="card technician" onclick="window.location.href='./Technician-App/index.html'">
+                <i class="fas fa-tools"></i>
+                <h3>فني</h3>
+                <p>إدارة طلبات الصيانة</p>
+            </div>
+            <div class="card merchant" onclick="window.location.href='./Merchant-App/index.html'">
+                <i class="fas fa-store"></i>
+                <h3>تاجر</h3>
+                <p>إدارة المنتجات والمتجر</p>
+            </div>
         </div>
     </div>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </body>
 </html>
