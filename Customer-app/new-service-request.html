@@ -152,7 +152,7 @@
         window.location.href = "login.html";
     }
 
-    // --- بيانات الأنواع والموديلات (نفس السابق، تم اختصارها للاختصار) ---
+    // بيانات الأنواع والموديلات
     const typesByCategory = {
         phones: {
             "iPhone": ["iPhone 7", "iPhone 8", "iPhone X", "iPhone XR", "iPhone XS", "iPhone 11", "iPhone 12", "iPhone 13", "iPhone 14", "iPhone 15", "iPhone SE"],
@@ -255,9 +255,6 @@
                 typeSelect.appendChild(option);
             }
             typeSelect.disabled = false;
-        } else {
-            typeSelect.disabled = true;
-            typeSelect.innerHTML = '<option value="">-- اختر الفئة أولاً --</option>';
         }
     }
 
@@ -281,9 +278,6 @@
                 option.textContent = model;
                 modelSelect.appendChild(option);
             });
-        } else {
-            modelSelect.disabled = true;
-            modelSelect.innerHTML = '<option value="">-- اختر النوع أولاً --</option>';
         }
     }
 
@@ -293,17 +287,14 @@
         modelSelect.innerHTML = '<option value="">-- اختر النوع أولاً --</option>';
     });
     typeSelect.addEventListener('change', updateModelList);
-
     updateTypeList();
 
-    // ========== الخريطة ==========
+    // الخريطة
     let map, marker, currentLatLng = null;
     function initMap() {
         const defaultLoc = [24.7136, 46.6753];
         map = L.map('map').setView(defaultLoc, 12);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-        }).addTo(map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
         marker = L.marker(defaultLoc, { draggable: true }).addTo(map);
         currentLatLng = { lat: defaultLoc[0], lng: defaultLoc[1] };
         marker.on('dragend', function(e) {
@@ -350,8 +341,6 @@
                     const video = document.createElement('video');
                     video.src = ev.target.result;
                     video.controls = true;
-                    video.width = 80;
-                    video.height = 80;
                     previewDiv.appendChild(video);
                 }
             };
@@ -415,7 +404,7 @@
             requestNumber: Date.now(),
             customerName: currentUser.fullName,
             customerMobile: currentUser.mobile,
-            customerUid: currentUser.uid,  // ✅ استخدام uid من currentUser مباشرة
+            customerUid: currentUser.uid || null,
             category: categorySelect.value,
             type: typeSelect.value,
             model: modelSelect.value,
@@ -428,15 +417,13 @@
         };
         
         if (demoMode) {
-            // وضع تجريبي: حفظ في localStorage
             const request = { ...requestData, id: Date.now() };
             saveServiceRequest(request);
-            showToast("✅ تم إرسال طلب تجريبي (لن يتم تنفيذه)");
+            showToast("✅ تم إرسال طلب تجريبي");
             setTimeout(() => { window.location.href = "my-orders.html"; }, 2000);
             return;
         }
         
-        // حفظ في Firebase
         try {
             const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
             const { getFirestore, collection, addDoc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
@@ -455,11 +442,11 @@
             const db = getFirestore(app);
             
             await addDoc(collection(db, 'service_requests'), requestData);
-            showToast("تم إرسال طلبك بنجاح ✅");
+            showToast("✅ تم إرسال طلبك بنجاح");
             setTimeout(() => { window.location.href = "my-orders.html"; }, 2000);
         } catch (error) {
             console.error(error);
-            showToast("حدث خطأ أثناء حفظ الطلب: " + error.message, true);
+            showToast("❌ حدث خطأ: " + error.message, true);
         }
     }
 
